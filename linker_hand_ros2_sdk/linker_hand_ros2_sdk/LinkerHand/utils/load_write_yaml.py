@@ -10,24 +10,10 @@ Description:
 symbol_custom_string_obkorol_copyright: 
 '''
 import yaml, os, sys
-from ament_index_python import get_package_prefix
-# # 获取当前脚本所在目录
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-# # 找到上上级目录
-# target_dir = os.path.abspath(os.path.join(current_dir, "../../../../../"))
-# # 添加到 sys.path
-# sys.path.append(target_dir)
-
-pkg_prefix = get_package_prefix('linker_hand_ros2_sdk')
-# 提取工作空间根路径（假设是标准 colcon 布局）
-ws_root = os.path.dirname(os.path.dirname(pkg_prefix))
-
-
-
 class LoadWriteYaml():
     def __init__(self):
         # 由于是API形式，这里要给配置文件目录绝对路径
-        yaml_path = "/home/linker-robot/ROS2/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
+        yaml_path = "/home/linkerhand/ROS2/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
         self.setting_path = yaml_path+"/config/setting.yaml"
         self.l7_positions = yaml_path+"/config/L7_positions.yaml"
         self.l10_positions = yaml_path+"/config/L10_positions.yaml"

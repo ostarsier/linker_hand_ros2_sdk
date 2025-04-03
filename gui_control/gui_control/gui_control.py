@@ -71,7 +71,12 @@ class ROS2SliderPublisher(Node):
         #msg.header.frame_id = 'base_link'  # 可自定义
         # 设置关节数据
         msg.name = names  # 关节名称
-        msg.position = position            # 关节位置（弧度）
+        # 确保 position 是列表，并且元素是 float 类型
+        if not isinstance(position, (list, tuple)):
+            position = [position]  # 如果是单个值，转换成列表
+        position = [float(p) for p in position]  # 确保所有元素都是 float 类型
+        
+        msg.position = position  # 赋值
         msg.velocity = [0.0] * len(position)             # 关节速度（可选）
         msg.effort = [0.0] * len(position)              # 关节力矩（可选）
         return msg

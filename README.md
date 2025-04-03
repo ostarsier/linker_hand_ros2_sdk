@@ -4,7 +4,7 @@
 
 LinkerHand Dexterous Hand ROS SDK, developed by CHIUS INC, is the driving software for a series of LinkerHand dexterous hands, including models such as L7, O7, L10, and O10, and provides functional example source code. It is applicable for both real robots and simulators.&#x20;
 
-Compatibility: Ubuntu 22.04 + ROS 2 Humble + Python ≥3.10
+Compatibility: Ubuntu 20.04 + ROS 2 Foxy + Python ≥3.8.20
 
 ## 2. Install
 

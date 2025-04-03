@@ -1,12 +1,3 @@
-<!--
- * @Author: HJX
- * @Date: 2025-04-02 11:39:42
- * @LastEditors: 
- * @LastEditTime: 2025-04-03 14:55:59
- * @FilePath: /linker_hand_ros2_sdk/src/README_CN.md
- * @Description: 
- * @symbol_custom_string_obkorol_copyright: 
--->
 # LinkerHand灵巧手ROS2 SDK
 
 ## 概述
@@ -14,7 +5,7 @@ LinkerHand灵巧手ROS SDK 是灵心巧手(北京)科技有限公司开发，用
 LinkerHandROS2 SDK当前支持Ubuntu22.04 ROS humble Python3.10 及以上环境
 
 ## 安装
-&ensp;&ensp;确保当前系统环境为Ubuntu22.04 ROS humble Python3.10 及以上
+&ensp;&ensp;确保当前系统环境为Ubuntu20.04 ROS 2 Foxy Python3.8.20 及以上
 - 下载
 
 ```bash
