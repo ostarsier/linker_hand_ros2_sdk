@@ -1,9 +1,9 @@
 <!--
  * @Author: HJX
  * @Date: 2025-04-02 11:39:42
- * @LastEditors: Please set LastEditors
- * @LastEditTime: 2025-04-02 15:40:07
- * @FilePath: /linker_hand_ros2_sdk/README_CN.md
+ * @LastEditors: 
+ * @LastEditTime: 2025-04-03 14:55:59
+ * @FilePath: /linker_hand_ros2_sdk/src/README_CN.md
  * @Description: 
  * @symbol_custom_string_obkorol_copyright: 
 -->
@@ -43,8 +43,19 @@ LinkerHandROS2 SDK当前支持Ubuntu22.04 ROS humble Python3.10 及以上环境
   $ source ./install/setup.bash
   $ ros2 run linker_hand_ros2_sdk linker_hand_sdk
 ```
+- 启动状态波形图(带有压力传感器的LinkerHand)
+```bash
+# 启动ROS2 SDK后新开终端
+$ cd linker_hand_ros2_sdk/
+$ source ./install/setup.bash
+$ ros2 run graphic_display graphic_display
+```
 
 ## 版本更新
+- > ### release_1.0.2
+  - 1、支持L10/O10版本灵巧手
+  - 2、支持GUI控制L10/O10版本灵巧手
+  - 3、增加支持压力传感器的LinkerHand波形图显示传感器状态
 - > ### release_1.0.1
   - 1、支持L7/O7版本灵巧手
   - 2、支持GUI控制L7/O7版本灵巧手
@@ -67,12 +78,7 @@ $ ros2 run gui_control gui_control
 ## L7
 - [7001-action-group-show-ti(手指运动)](手指运动)
 
-## L0
+## L10
 - [10001-action-group-show-normal(手指运动)](手指运动)
 
 
-## [TOPIC_CMD] # 通过topic pub 相关命令 注: 发送命令后，会在SDK终端打印相关信息
-- 获取当前灵巧手电机故障码
-```bash
-rostopic pub /cb_hand_setting_cmd std_msgs/String '{data: "{\"setting_cmd\":\"get_faults\",\"params\":{\"hand_type\":\"left\"}}"}'
-```

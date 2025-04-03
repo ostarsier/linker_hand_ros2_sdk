@@ -4,7 +4,7 @@
 Author: HJX
 Date: 2025-04-01 17:50:14
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-02 14:59:43
+LastEditTime: 2025-04-02 18:00:57
 FilePath: /linker_hand_ros2_sdk/src/gui_control/gui_control/gui_control.py
 Description: 
 编译: colcon build --symlink-install --packages-select gui_control
@@ -25,21 +25,11 @@ sys.path.append(src_path)
 from linker_hand_ros2_sdk.LinkerHand.utils.init_linker_hand import InitLinkerHand
 from linker_hand_ros2_sdk.LinkerHand.utils.color_msg import ColorMsg
 from linker_hand_ros2_sdk.LinkerHand.utils.load_write_yaml import LoadWriteYaml
-
-
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
-import rclpy
-from rclpy.node import Node
 from std_msgs.msg import String, Header
 from sensor_msgs.msg import JointState
 import threading
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSlider, QLabel
-from PyQt5.QtCore import Qt
-import rclpy
-from rclpy.node import Node
-from std_msgs.msg import Int32
+
+
 
 class ROS2SliderPublisher(Node):
     def __init__(self):

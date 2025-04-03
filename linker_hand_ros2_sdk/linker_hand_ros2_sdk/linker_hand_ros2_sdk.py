@@ -4,7 +4,7 @@
 Author: HJX
 Date: 2025-04-01 13:55:14
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-02 15:52:43
+LastEditTime: 2025-04-03 09:38:09
 FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/linker_hand_ros2_sdk.py
 Description: 
 编译: colcon build --symlink-install
@@ -62,6 +62,7 @@ class LinkerHandRos2SDK(Node):
         ColorMsg(msg=f"设置当前{hand_joint} {hand_type}灵巧手", color="yellow")
         if hand_type == "left":
             self.left_hand_exists = True
+            self.left_hand_touch = self.config['LINKER_HAND']['LEFT_HAND']['TOUCH']
             self.left_hand_joint = hand_joint
             self.left_hand_api = LinkerHandApi(hand_type=hand_type,hand_joint=self.left_hand_joint)
             self.left_hand_api.set_speed(speed=speed)
@@ -77,8 +78,11 @@ class LinkerHandRos2SDK(Node):
                 self.left_hand_api.finger_move(pose=[80] * 5)
             self.left_hand_pub =  self.create_publisher(JointState, "/cb_left_hand_state", 10)
             self.left_hand_info_pub = self.create_publisher(String, "/cb_left_hand_info", 10)
+            if self.left_hand_touch == True:
+                self.left_hand_touch_pub = self.create_publisher(String, "/cb_left_hand_force", 10)
         elif hand_type == "right":
             self.right_hand_exists = True
+            self.right_hand_touch = self.config['LINKER_HAND']['RIGHT_HAND']['TOUCH']
             self.right_hand_joint = hand_joint
             self.right_hand_api = LinkerHandApi(hand_type=hand_type,hand_joint=self.right_hand_joint)
             self.right_hand_api.set_speed(speed=speed)
@@ -94,6 +98,8 @@ class LinkerHandRos2SDK(Node):
                 self.right_hand_api.finger_move(pose=[250] * 5)
             self.right_hand_pub =  self.create_publisher(JointState, "/cb_right_hand_state", 10)
             self.right_hand_info_pub = self.create_publisher(String, "/cb_right_hand_info", 10)
+            if self.right_hand_touch == True:
+                self.right_hand_touch_pub = self.create_publisher(String, "/cb_right_hand_force", 10)
 
 
     def _create_joint_state_msg(self, position, names=None):
@@ -126,11 +132,12 @@ class LinkerHandRos2SDK(Node):
         rate = 1.0 / 60  # 60 FPS
         while rclpy.ok():
             if self.left_hand_exists == True:
+                left_force = self.left_hand_api.get_force()
                 left_info = {
                     "left_hand":{
                         "hand_joint": self.left_hand_joint,
                         "speed": self.left_hand_api.get_speed(),
-                        "force": self.left_hand_api.get_force(),
+                        "force": left_force,
                         "motor_temperature": self.left_hand_api.get_temperature(),
                         "torque": self.left_hand_api.get_torque()
                     }
@@ -141,12 +148,20 @@ class LinkerHandRos2SDK(Node):
                 data = String()
                 data.data = json.dumps(left_info)
                 self.left_hand_info_pub.publish(data)
+                if self.left_hand_touch == True:
+                    force_data = String()
+                    force_dic = {
+                        "force": left_force
+                    }
+                    force_data.data = json.dumps(force_dic)
+                    self.left_hand_touch_pub.publish(force_data)
             if self.right_hand_exists == True:
+                right_force = self.right_hand_api.get_force()
                 right_info = {
                     "right_hand":{
                         "hand_joint": self.right_hand_joint,
                         "speed": self.right_hand_api.get_speed(),
-                        "force": self.right_hand_api.get_force(),
+                        "force": right_force,
                         "motor_temperature": self.right_hand_api.get_temperature(),
                         "torque": self.right_hand_api.get_torque()
                     }
@@ -157,6 +172,13 @@ class LinkerHandRos2SDK(Node):
                 data = String()
                 data.data = json.dumps(right_info)
                 self.right_hand_info_pub.publish(data)
+                if self.right_hand_touch == True:
+                    right_force_data = String()
+                    right_force_dic = {
+                        "force": right_force
+                    }
+                    right_force_data.data = json.dumps(right_force_dic)
+                    self.left_hand_touch_pub.publish(right_force_data)
             time.sleep(rate)
 
 
