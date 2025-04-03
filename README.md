@@ -93,10 +93,3 @@ $ ros2 run gui_control gui_control
 
 * 10001-action-group-show-normal(Finger Movement)
 
-### 5.4 \[TOPIC\_CMD] # Publish via \`topic pub\`. Note: The SDK terminal will log feedback after command execution.
-
-* Retrieve current motor fault codes from the dexterous hand.
-
-```bash
-rostopic pub /cb_hand_setting_cmd std_msgs/String '{data: "{\"setting_cmd\":\"get_faults\",\"params\":{\"hand_type\":\"left\"}}"}'
-```
