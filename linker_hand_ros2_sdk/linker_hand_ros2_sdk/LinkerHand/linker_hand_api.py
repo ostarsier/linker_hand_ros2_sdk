@@ -38,7 +38,7 @@ class LinkerHandApi:
         if self.hand_joint == "L10":
             from core.linker_hand_l10_can import LinkerHandL10Can
             self.hand = LinkerHandL10Can(can_id=self.hand_id)
-        if self.hand_joint == "L24":
+        if self.hand_joint == "L25":
             from core.linker_hand_l25_can import LinkerHandL25Can
             self.hand = LinkerHandL25Can(config=self.config, can_id=self.hand_id)
         # 打开can0
