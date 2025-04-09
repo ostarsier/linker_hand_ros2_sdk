@@ -2,26 +2,21 @@
 Author: HJX
 Date: 2025-04-01 14:09:21
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-02 15:48:56
-FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/linker_hand_api.py
+LastEditTime: 2025-04-09 14:05:33
+FilePath: /LinkerHand_Python_SDK/LinkerHand/linker_hand_api.py
 Description: 
 symbol_custom_string_obkorol_copyright: 
 '''
 #!/usr/bin/env python3 
 # -*- coding: utf-8 -*-
 import sys,os,time
-
-
-#current_dir = os.path.dirname(os.path.abspath(__file__))
-#target_dir = os.path.abspath(os.path.join(current_dir, "../.."))
-#sys.path.append(target_dir)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils.color_msg import ColorMsg
-#from linker_hand_ros2_sdk.LinkerHand.utils.color_msg import ColorMsg
 from utils.load_write_yaml import LoadWriteYaml
 from utils.open_can import OpenCan
 class LinkerHandApi:
     def __init__(self,hand_type="left",hand_joint="L10"):
+        self.last_position = []
         self.yaml = LoadWriteYaml()
         self.config = self.yaml.load_setting_yaml()
         self.version = self.config["VERSION"]
@@ -38,9 +33,12 @@ class LinkerHandApi:
         if self.hand_joint == "L10":
             from core.linker_hand_l10_can import LinkerHandL10Can
             self.hand = LinkerHandL10Can(can_id=self.hand_id)
+        if self.hand_joint == "L20":
+            from core.linker_hand_l20_can import LinkerHandL20Can
+            self.hand = LinkerHandL20Can(can_id=self.hand_id)
         if self.hand_joint == "L25":
             from core.linker_hand_l25_can import LinkerHandL25Can
-            self.hand = LinkerHandL25Can(config=self.config, can_id=self.hand_id)
+            self.hand = LinkerHandL25Can(can_id=self.hand_id)
         # 打开can0
         if sys.platform == "linux":
             self.open_can = OpenCan(load_yaml=self.yaml)
@@ -56,14 +54,20 @@ class LinkerHandApi:
         五指移动
         @params: pose list L7 len(7) | L10 len(10) | L20 len(20) | L25 len(25) 0~255
         '''
+        if pose == self.last_position:
+            return
+        #ColorMsg(msg=f"当前LinkerHand为{self.hand_type} {self.hand_joint},动作序列为{pose}", color="green")
         if self.hand_joint == "L7" and len(pose) == 7:
             self.hand.set_joint_positions(pose)
         elif self.hand_joint == "L10" and len(pose) == 10:
+            self.hand.set_joint_positions(pose)
+        elif self.hand_joint == "L20" and len(pose) == 20:
             self.hand.set_joint_positions(pose)
         elif self.hand_joint == "L25" and len(pose) == 25:
             self.hand.set_joint_positions(pose)
         else:
             ColorMsg(msg=f"当前LinkerHand为{self.hand_type}{self.hand_joint},动作序列为{pose},并不匹配", color="red")
+        self.last_position = pose
 
     
     def _get_normal_force(self):
@@ -92,20 +96,32 @@ class LinkerHandApi:
     
     def set_speed(self,speed=[100]*5):
         '''# 设置速度'''
-        if self.hand_joint == "L10":
-            self.hand.set_joint_speed_l10(speed)
-        else:
-            self.hand.set_speed(speed=speed)
+        ColorMsg(msg=f"设置速度为{speed}", color="green")
+        self.hand.set_speed(speed=speed)
     
     def set_torque(self, torque=[]):
         '''设置最大扭矩'''
+        ColorMsg(msg=f"设置最大扭矩为{torque}", color="green")
         return self.hand.set_torque(torque=torque)
     
+    def set_current(self, current=[]):
+        '''设置电流 暂不支持'''
+        if self.hand_joint == "L20":
+            return self.hand.set_current(current=current)
+        else:
+            pass
+
+    def get_version(self):
+        '''获取版本'''
+        return self.hand.get_version()
+    def get_current(self):
+        '''获取当前电流'''
+        return self.hand.get_current()
     def get_state(self):
-        '''# 获取当前关节状态'''
+        '''获取当前关节状态'''
         return self.hand.get_current_status()
     def get_speed(self):
-        '''# 获取速度'''
+        '''获取速度'''
         return self.hand.get_speed()
     
     def get_torque(self):
@@ -120,12 +136,26 @@ class LinkerHandApi:
         '''获取电机故障码'''
         return self.hand.get_fault()
     
-    # 设置使能
+    def clear_faults(self):
+        '''清除电机故障码 暂不支持 目前只支持L20'''
+        if self.hand_joint == "L20":
+            self.hand.clear_faults()
+        else:
+            return [0] * 5
+
     def set_enable(self):
-        self.hand.set_enable_mode()
-    # 设置失能
+        '''设置电机使能 只支持L25'''
+        if self.hand_joint == "L25":
+            self.hand.set_enable_mode()
+        else:
+            pass
+
     def set_disable(self):
-        self.hand.set_disability_mode()
+        '''设置电机使能 只支持L25'''
+        if self.hand_joint == "L25":
+            self.hand.set_disability_mode()
+        else:
+            pass
 
     
 

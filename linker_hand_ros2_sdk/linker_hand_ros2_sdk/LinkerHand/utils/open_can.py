@@ -4,8 +4,8 @@
 Author: HJX
 Date: 2025-04-01 14:09:21
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-02 15:00:03
-FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/utils/open_can.py
+LastEditTime: 2025-04-08 09:25:01
+FilePath: /Linker_Hand_SDK_ROS/src/linker_hand_sdk_ros/scripts/LinkerHand/utils/open_can.py
 Description: 
 symbol_custom_string_obkorol_copyright: 
 '''
@@ -15,7 +15,7 @@ from color_msg import ColorMsg
 from load_write_yaml import LoadWriteYaml
 class OpenCan:
     def __init__(self,load_yaml=None):
-        self.yaml = load_yaml
+        self.yaml = LoadWriteYaml()
         self.password = self.yaml.load_setting_yaml()["PASSWORD"]
 
     def open_can0(self):

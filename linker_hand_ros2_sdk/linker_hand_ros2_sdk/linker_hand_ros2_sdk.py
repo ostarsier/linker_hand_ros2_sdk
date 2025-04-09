@@ -4,7 +4,7 @@
 Author: HJX
 Date: 2025-04-01 13:55:14
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-03 09:38:09
+LastEditTime: 2025-04-09 15:13:47
 FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/linker_hand_ros2_sdk.py
 Description: 
 编译: colcon build --symlink-install
@@ -56,50 +56,60 @@ class LinkerHandRos2SDK(Node):
     def right_hand_cb(self, msg):
         self.right_hand_api.finger_move(pose=list(msg.position))
     def _init_linker_hand(self):
-        hand_joint, hand_type = InitLinkerHand().current_hand()
-        torque=[250,250,250,250,250,250,250]
-        speed=[120,250,250,250,250,250,250]
-        ColorMsg(msg=f"设置当前{hand_joint} {hand_type}灵巧手", color="yellow")
-        if hand_type == "left":
+        self.left_hand ,self.left_hand_joint ,self.left_hand_type ,self.left_hand_force ,self.right_hand ,self.right_hand_joint ,self.right_hand_type ,self.right_hand_force,self.setting = InitLinkerHand().current_hand()
+        torque=[250,250,250,250,250]
+        speed=[120,250,250,250,250]
+        
+        if self.left_hand == True:
             self.left_hand_exists = True
-            self.left_hand_touch = self.config['LINKER_HAND']['LEFT_HAND']['TOUCH']
-            self.left_hand_joint = hand_joint
-            self.left_hand_api = LinkerHandApi(hand_type=hand_type,hand_joint=self.left_hand_joint)
-            self.left_hand_api.set_speed(speed=speed)
-            ColorMsg(msg=f"设置当前{self.left_hand_joint} {hand_type}灵巧手speed:{speed}", color="green")
-            time.sleep(0.001)
-            self.left_hand_api.set_torque(torque=torque)
-            ColorMsg(msg=f"设置当前{self.left_hand_joint} {hand_type}灵巧手torque:{torque}", color="green")
+            self.left_hand_api = LinkerHandApi(hand_type=self.left_hand_type,hand_joint=self.left_hand_joint)
+            
             if self.left_hand_joint == "L7":
-                self.left_hand_api.finger_move(pose=[80] * 7)
+                torque=[250,250,250,250,250,250,250]
+                speed=[120,250,250,250,250,250,250]
+                self.left_hand_api.finger_move(pose=[255, 200, 255, 255, 255, 255, 180])
             elif self.left_hand_joint == "L10":
-                self.left_hand_api.finger_move(pose=[80] * 10)
+                self.left_hand_api.finger_move(pose=[255, 200, 255, 255, 255, 255, 180, 180, 180, 41])
+            elif self.left_hand_joint == "L20":
+                self.left_hand_api.finger_move(pose=[255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255])
+            elif self.left_hand_joint == "L25":
+                self.left_hand_api.finger_move(pose=[75, 255, 255, 255, 255, 176, 97, 81, 114, 147, 202, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255])
             else:
                 self.left_hand_api.finger_move(pose=[80] * 5)
             self.left_hand_pub =  self.create_publisher(JointState, "/cb_left_hand_state", 10)
             self.left_hand_info_pub = self.create_publisher(String, "/cb_left_hand_info", 10)
-            if self.left_hand_touch == True:
+            if self.left_hand_force == True:
                 self.left_hand_touch_pub = self.create_publisher(String, "/cb_left_hand_force", 10)
-        elif hand_type == "right":
-            self.right_hand_exists = True
-            self.right_hand_touch = self.config['LINKER_HAND']['RIGHT_HAND']['TOUCH']
-            self.right_hand_joint = hand_joint
-            self.right_hand_api = LinkerHandApi(hand_type=hand_type,hand_joint=self.right_hand_joint)
-            self.right_hand_api.set_speed(speed=speed)
-            ColorMsg(msg=f"设置当前{self.right_hand_api} {hand_type}灵巧手speed:{speed}", color="green")
+            self.left_hand_api.set_speed(speed=speed)
+            ColorMsg(msg=f"设置当前{self.left_hand_joint} {self.left_hand_type}灵巧手speed:{speed}", color="green")
             time.sleep(0.001)
-            self.right_hand_api.set_torque(torque=torque)
-            ColorMsg(msg=f"设置当前{self.right_hand_api} {hand_type}灵巧手torque:{torque}", color="green")
+            self.left_hand_api.set_torque(torque=torque)
+            ColorMsg(msg=f"设置当前{self.left_hand_joint} {self.left_hand_type}灵巧手torque:{torque}", color="green")
+        elif self.right_hand == True:
+            self.right_hand_exists = True
+            self.right_hand_api = LinkerHandApi(hand_type=self.right_hand_type,hand_joint=self.right_hand_joint)
+            
             if self.right_hand_joint == "L7":
-                self.right_hand_api.finger_move(pose=[80] * 7)
+                torque=[250,250,250,250,250,250,250]
+                speed=[120,250,250,250,250,250,250]
+                self.right_hand_api.finger_move(pose=[255, 200, 255, 255, 255, 255, 180])
             elif self.right_hand_joint == "L10":
-                self.right_hand_api.finger_move(pose=[250] * 10)
+                self.right_hand_api.finger_move(pose=[255, 200, 255, 255, 255, 255, 180, 180, 180, 41])
+            elif self.right_hand_joint == "L20":
+                self.right_hand_api.finger_move(pose=[255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255])
+            elif self.right_hand_joint == "L25":
+                self.right_hand_api.finger_move(pose=[75, 255, 255, 255, 255, 176, 97, 81, 114, 147, 202, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255])
             else:
                 self.right_hand_api.finger_move(pose=[250] * 5)
             self.right_hand_pub =  self.create_publisher(JointState, "/cb_right_hand_state", 10)
             self.right_hand_info_pub = self.create_publisher(String, "/cb_right_hand_info", 10)
-            if self.right_hand_touch == True:
+            if self.right_hand_force == True:
                 self.right_hand_touch_pub = self.create_publisher(String, "/cb_right_hand_force", 10)
+            self.right_hand_api.set_speed(speed=speed)
+            ColorMsg(msg=f"设置当前{self.right_hand_api} {self.right_hand_type}灵巧手speed:{speed}", color="green")
+            time.sleep(0.001)
+            self.right_hand_api.set_torque(torque=torque)
+            ColorMsg(msg=f"设置当前{self.right_hand_api} {self.right_hand_type}灵巧手torque:{torque}", color="green")
 
 
     def _create_joint_state_msg(self, position, names=None):
@@ -148,7 +158,7 @@ class LinkerHandRos2SDK(Node):
                 data = String()
                 data.data = json.dumps(left_info)
                 self.left_hand_info_pub.publish(data)
-                if self.left_hand_touch == True:
+                if self.left_hand_force == True:
                     force_data = String()
                     force_dic = {
                         "force": left_force
@@ -172,13 +182,13 @@ class LinkerHandRos2SDK(Node):
                 data = String()
                 data.data = json.dumps(right_info)
                 self.right_hand_info_pub.publish(data)
-                if self.right_hand_touch == True:
+                if self.right_hand_force == True:
                     right_force_data = String()
                     right_force_dic = {
                         "force": right_force
                     }
                     right_force_data.data = json.dumps(right_force_dic)
-                    self.left_hand_touch_pub.publish(right_force_data)
+                    self.right_hand_touch_pub.publish(right_force_data)
             time.sleep(rate)
 
 

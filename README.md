@@ -53,7 +53,11 @@ Download
  $ ros2 run graphic_display graphic_display
 ```
 ## 4. Version Information
-* release\_1.0.2
+* release_1.0.3
+
+  * 1、Compatible with L20/L25 Dexterous Hand Models
+
+* release_1.0.2
 
   * 1、Compatible with L10/O10 Dexterous Hand Models 
 
@@ -61,7 +65,7 @@ Download
 
   * 3、Added real-time pressure sensor waveform visualization for the LinkerHand, enabling dynamic monitoring of tactile feedback status.
   
-* release\_1.0.1
+* release_1.0.1
 
   * 1、Compatible with L7/O7 Dexterous Hand Models
 

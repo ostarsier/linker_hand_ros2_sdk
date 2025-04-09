@@ -1,3 +1,12 @@
+<!--
+ * @Author: HJX
+ * @Date: 2025-04-02 11:39:42
+ * @LastEditors: 
+ * @LastEditTime: 2025-04-09 15:25:51
+ * @FilePath: /linker_hand_ros2_sdk/src/README_CN.md
+ * @Description: 
+ * @symbol_custom_string_obkorol_copyright: 
+-->
 # LinkerHand灵巧手ROS2 SDK
 
 ## 概述
@@ -43,6 +52,9 @@ $ ros2 run graphic_display graphic_display
 ```
 
 ## 版本更新
+- > ### release_1.0.3
+  - 1、支持L20/L25版本灵巧手
+
 - > ### release_1.0.2
   - 1、支持L10/O10版本灵巧手
   - 2、支持GUI控制L10/O10版本灵巧手
