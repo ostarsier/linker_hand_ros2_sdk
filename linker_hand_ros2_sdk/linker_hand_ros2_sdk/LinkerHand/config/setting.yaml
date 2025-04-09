@@ -2,8 +2,8 @@ VERSION: 2.0.1 # 重构核心源码
 LINKER_HAND:  # 手部配置信息
   LEFT_HAND:
     EXISTS: True # 是否存在左手
-    TOUCH: True # 是否有压力传感器
-    JOINT: L20 # 左手关节数 L7/L10/L20/L25/L25_v2
+    TOUCH: False # 是否有压力传感器
+    JOINT: L10 # 左手关节数 L7/L10/L20/L25/L25_v2
     NAME: # 无论l10还是l20 joint name都是20个
       - joint41
       - joint42

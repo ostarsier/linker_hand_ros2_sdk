@@ -4,7 +4,7 @@
 Author: HJX
 Date: 2025-04-01 13:55:14
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-09 15:13:47
+LastEditTime: 2025-04-09 18:36:21
 FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/linker_hand_ros2_sdk.py
 Description: 
 编译: colcon build --symlink-install
@@ -32,10 +32,12 @@ class LinkerHandRos2SDK(Node):
         self.left_hand_sub = None
         self.right_hand_sub = None
         self._init_linker_hand()
+        
         # 启动线程，线程内循环发布机械臂状态
         self.thread = threading.Thread(target=self.pub_linker_hand_state)
         self.thread.daemon = True  # 设置为守护线程，主线程退出时自动结束
         self.thread.start()
+        time.sleep(0.1)
         if self.left_hand_exists == True:
             self.left_hand_sub = self.create_subscription(
                 JointState,
@@ -43,6 +45,8 @@ class LinkerHandRos2SDK(Node):
                 self.left_hand_cb,
                 10  # 队列长度
             )
+        print("_-" * 20)
+        print(self.left_hand_exists)
         if self.right_hand_exists == True:
             self.right_hand_sub = self.create_subscription(
                 JointState,
@@ -50,11 +54,14 @@ class LinkerHandRos2SDK(Node):
                 self.right_hand_cb,
                 10  # 队列长度
             )
+        
 
     def left_hand_cb(self, msg):
-        self.left_hand_api.finger_move(pose=list(msg.position))
+        position = list(msg.position)
+        self.left_hand_api.finger_move(pose=position)
     def right_hand_cb(self, msg):
-        self.right_hand_api.finger_move(pose=list(msg.position))
+        position = list(msg.position)
+        self.right_hand_api.finger_move(pose=position)
     def _init_linker_hand(self):
         self.left_hand ,self.left_hand_joint ,self.left_hand_type ,self.left_hand_force ,self.right_hand ,self.right_hand_joint ,self.right_hand_type ,self.right_hand_force,self.setting = InitLinkerHand().current_hand()
         torque=[250,250,250,250,250]

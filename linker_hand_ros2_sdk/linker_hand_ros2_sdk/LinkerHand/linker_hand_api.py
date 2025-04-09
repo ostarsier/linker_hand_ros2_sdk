@@ -2,8 +2,8 @@
 Author: HJX
 Date: 2025-04-01 14:09:21
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-09 14:05:33
-FilePath: /LinkerHand_Python_SDK/LinkerHand/linker_hand_api.py
+LastEditTime: 2025-04-09 18:51:52
+FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/linker_hand_api.py
 Description: 
 symbol_custom_string_obkorol_copyright: 
 '''
@@ -54,8 +54,8 @@ class LinkerHandApi:
         五指移动
         @params: pose list L7 len(7) | L10 len(10) | L20 len(20) | L25 len(25) 0~255
         '''
-        if pose == self.last_position:
-            return
+        # if pose == self.last_position:
+        #     return
         #ColorMsg(msg=f"当前LinkerHand为{self.hand_type} {self.hand_joint},动作序列为{pose}", color="green")
         if self.hand_joint == "L7" and len(pose) == 7:
             self.hand.set_joint_positions(pose)

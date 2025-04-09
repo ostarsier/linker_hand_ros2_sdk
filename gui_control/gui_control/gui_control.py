@@ -4,7 +4,7 @@
 Author: HJX
 Date: 2025-04-01 17:50:14
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-02 18:00:57
+LastEditTime: 2025-04-09 18:24:28
 FilePath: /linker_hand_ros2_sdk/src/gui_control/gui_control/gui_control.py
 Description: 
 编译: colcon build --symlink-install --packages-select gui_control
@@ -80,7 +80,7 @@ class SliderApp(QMainWindow):
     def __init__(self, ros_node):
         super().__init__()
         self.yaml = LoadWriteYaml()
-        self.hand_joint,self.hand_type = InitLinkerHand().current_hand()
+
         
         self.ros_node = ros_node
         self._init_hand()
@@ -88,12 +88,15 @@ class SliderApp(QMainWindow):
         self._init_ui()
     
     def _init_hand(self):
+        self.yaml = LoadWriteYaml() # 初始化配置文件
+        # 读取配置文件
+        self.setting = self.yaml.load_setting_yaml()
         # 判断左手是否配置
         self.left_hand = False
         self.right_hand = False
-        if self.hand_type == "left":
+        if self.setting['LINKER_HAND']['LEFT_HAND']['EXISTS'] == True:
             self.left_hand = True
-        elif self.hand_type == "right":
+        elif self.setting['LINKER_HAND']['RIGHT_HAND']['EXISTS'] == True:
             self.right_hand = True
         # gui控制只支持单手，这里进行左右手互斥
         if self.left_hand == True and self.right_hand == True:
@@ -102,24 +105,19 @@ class SliderApp(QMainWindow):
         if self.left_hand == True:
             print("左手")
             self.hand_exists = True
+            self.hand_joint = self.setting['LINKER_HAND']['LEFT_HAND']['JOINT']
             self.hand_type = "left"
         if self.right_hand == True:
             print("右手")
             self.hand_exists = True
+            self.hand_joint = self.setting['LINKER_HAND']['RIGHT_HAND']['JOINT']
             self.hand_type = "right"
         
-        self.init_pos = [255] * 10
-        # if self.hand_joint == "L25":
-        #     # L25
-        #     self.init_pos = [255] * 24
-        #     self.joint_name = ["拇指根部", "食指根部", "中指根部", "无名指根部","预留","拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","预留","拇指横摆","预留","预留","预留","预留","拇指尖部","食指尖部","中指尖部","无名指部","预留","预留","预留","预留","预留"]
         if self.hand_joint == "L25":
-            #self.set_enable()
-            # L25
             self.init_pos = [255] * 25
             # topic
             self.joint_name = ["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部","大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆","大拇指横滚","预留","预留","预留","预留","大拇指中部","食指中部","中指中部","无名指中部","小拇指中部","大拇指指尖","食指指尖","中指指尖","无名指指尖","小拇指指尖"]
-            #self.joint_name = ["拇指根部0", "食指根部1", "中指根部2", "无名指根部3","小指根部4","拇指侧摆5","食指侧摆6","中指侧摆","无名指侧摆8","小指侧摆9","拇指横摆10","预留","预留","预留","预留","拇指中部15","食指中部16","中指中部17","无名指中部18","小指中部19","拇指指尖20","食指指尖21","中指指尖22","无名指指尖23","小指指尖24"]
+
         elif self.hand_joint == "L20":
             self.init_pos = [255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255]
             # L20
@@ -174,9 +172,6 @@ class SliderApp(QMainWindow):
     # 点击按钮后将动作数值写入yaml文件
     def handle_button_click(self,text):
         all_action = self.yaml.load_action_yaml(hand_type=self.hand_type,hand_joint=self.hand_joint)
-        print("_-"*20)
-        print(all_action)
-        print("_-"*20)
         for index,pos in enumerate(all_action):
             if pos['ACTION_NAME'] == text:
                 position = pos['POSITION']
