@@ -4,7 +4,7 @@
 Author: HJX
 Date: 2025-04-01 17:50:14
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-09 18:24:28
+LastEditTime: 2025-04-10 13:54:12
 FilePath: /linker_hand_ros2_sdk/src/gui_control/gui_control/gui_control.py
 Description: 
 编译: colcon build --symlink-install --packages-select gui_control
@@ -55,12 +55,14 @@ class ROS2SliderPublisher(Node):
         while self.running:
             if self.last_position == None:
                 continue
-            msg = self.create_joint_state_msg(position=self.last_position, names=[])
-            if self.hand_type == "left":
-                self.left_hand_publisher_.publish(msg)
             else:
-                self.right_hand_publisher_.publish(msg)
-            time.sleep(rate)
+                l_p = [float(p) if p is not None else 0.0 for p in self.last_position]
+                msg = self.create_joint_state_msg(position=l_p, names=[])
+                if self.hand_type == "left":
+                    self.left_hand_publisher_.publish(msg)
+                else:
+                    self.right_hand_publisher_.publish(msg)
+                time.sleep(rate)
 
     
     def create_joint_state_msg(self, position=[], names=[]):
