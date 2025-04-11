@@ -2,8 +2,8 @@
 Author: HJX
 Date: 2025-04-01 14:09:21
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-09 18:51:52
-FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/linker_hand_api.py
+LastEditTime: 2025-04-11 09:19:15
+FilePath: /Linker_Hand_SDK_ROS/src/linker_hand_sdk_ros/scripts/LinkerHand/linker_hand_api.py
 Description: 
 symbol_custom_string_obkorol_copyright: 
 '''
@@ -98,14 +98,16 @@ class LinkerHandApi:
         '''# 设置速度'''
         ColorMsg(msg=f"设置速度为{speed}", color="green")
         self.hand.set_speed(speed=speed)
-    
+    def set_joint_speed(self,speed=[100]*5):
+        '''设置速度by topic'''
+        self.hand.set_speed(speed=speed)
     def set_torque(self, torque=[]):
         '''设置最大扭矩'''
         ColorMsg(msg=f"设置最大扭矩为{torque}", color="green")
         return self.hand.set_torque(torque=torque)
     
     def set_current(self, current=[]):
-        '''设置电流 暂不支持'''
+        '''设置电流 L7/L10/L25暂不支持'''
         if self.hand_joint == "L20":
             return self.hand.set_current(current=current)
         else:
@@ -123,7 +125,17 @@ class LinkerHandApi:
     def get_speed(self):
         '''获取速度'''
         return self.hand.get_speed()
-    
+    def get_joint_speed(self):
+        speed = self.hand.get_speed()
+        if self.hand_joint == "L7":
+            return speed
+        elif self.hand_joint == "L10":
+            return [speed[0],255,speed[1],speed[2],speed[3],speed[4],255,255,255,255]
+        elif self.hand_joint == "L20":
+            return [255,speed[1],speed[2],speed[3],speed[4],255,255,255,255,255,speed[0],255,255,255,255,255,255,255,255,255]
+        elif self.hand_joint == "L25":
+            return speed
+
     def get_torque(self):
         '''获取当前最大扭矩'''
         return self.hand.get_torque()

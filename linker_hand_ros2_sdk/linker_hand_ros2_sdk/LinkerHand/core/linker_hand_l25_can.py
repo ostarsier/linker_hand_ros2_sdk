@@ -141,7 +141,6 @@ class LinkerHandL25Can:
         else:
             raise EnvironmentError("Unsupported platform for CAN interface")
 
-
         # 启动接收线程
         self.receive_thread = threading.Thread(target=self.receive_response)
         self.receive_thread.daemon = True
@@ -346,12 +345,18 @@ class LinkerHandL25Can:
     
     def set_speed(self, speed):
         self.speed = speed
-        ColorMsg(msg=f"L25设置速度为:{self.speed}", color="yellow")
-        thumb_speed = [self.speed[0]]*5
-        index_speed = [self.speed[1]]*5
-        middle_speed = [self.speed[2]]*5
-        ring_speed = [self.speed[3]]*5
-        little_speed = [self.speed[4]]*5
+        if len(speed) < 25:
+            thumb_speed = [self.speed[0]]*5
+            index_speed = [self.speed[1]]*5
+            middle_speed = [self.speed[2]]*5
+            ring_speed = [self.speed[3]]*5
+            little_speed = [self.speed[4]]*5
+        else:
+            thumb_speed = [self.speed[0],self.speed[1],self.speed[2],self.speed[3],self.speed[4]]
+            index_speed = [self.speed[5],self.speed[6],self.speed[7],self.speed[8],self.speed[9]]
+            middle_speed = [self.speed[10],self.speed[11],self.speed[12],self.speed[13],self.speed[14]]
+            ring_speed = [self.speed[15],self.speed[16],self.speed[17],self.speed[18],self.speed[19]]
+            little_speed = [self.speed[20],self.speed[21],self.speed[22],self.speed[23],self.speed[24]]
         self.send_command(FrameProperty.THUMB_SPEED, thumb_speed)
         self.send_command(FrameProperty.INDEX_SPEED, index_speed)
         self.send_command(FrameProperty.MIDDLE_SPEED, middle_speed)
@@ -434,16 +439,6 @@ class LinkerHandL25Can:
                 self.x4d = list(response_data)
             elif frame_type == 0xc1: # 版本号
                 self.xc1 = list(response_data)
-            elif frame_type == 0x51:
-                self.x51 = list(response_data)
-            elif frame_type == 0x52:
-                self.x52 = list(response_data)
-            elif frame_type == 0x53:
-                self.x53 = list(response_data)
-            elif frame_type == 0x54:
-                self.x54 = list(response_data)
-            elif frame_type == 0x55:
-                self.x55 = list(response_data)
             elif frame_type == 0x59:
                 self.x59 = list(response_data)
             elif frame_type == 0x5a:
@@ -513,7 +508,7 @@ class LinkerHandL25Can:
     def action_play(self):
         self.send_command(0xA0,[])
     # 获取所有关节数据
-    def get_current_status(self, j=[]):
+    def get_current_status(self, j=''):
         self.send_command(FrameProperty.THUMB_POS, j)
         #time.sleep(0.001)
         self.send_command(FrameProperty.INDEX_POS,j)
@@ -608,8 +603,6 @@ class LinkerHandL25Can:
         self.get_ring_threshold()
         self.get_little_threshold()
         return [self.x61]+[self.x62]+[self.x63]+[self.x64]+[self.x65]
-    def get_torque(self):
-        return [self.x51,self.x52,self.x53,self.x54,self.x55]
     def close_can_interface(self):
         if self.bus:
             self.bus.shutdown()  # 关闭 CAN 总线
