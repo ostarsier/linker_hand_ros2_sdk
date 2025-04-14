@@ -183,10 +183,11 @@ class LinkerHandL10Can:
         '''获取当前速度'''
         return self.x05
     def get_press(self):
-        '''获取当前扭矩'''
-        self.set_max_torque_limits(pressures=[0.0], type="get")
-        time.sleep(0.001)
-        return self.x02
+        '''暂不支持'''
+        # self.set_max_torque_limits(pressures=[0.0], type="get")
+        # time.sleep(0.001)
+        # return self.x02
+        return [None] * 5
     def get_force(self):
         '''获取压感数据'''
         return [self.normal_force,self.tangential_force , self.tangential_force_dir , self.approach_inc]
