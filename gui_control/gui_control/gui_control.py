@@ -11,11 +11,23 @@ from PyQt5.QtWidgets import (
 )
 
 class HandControlNode(Node):
-    def __init__(self,hand_type="left",hand_joint="L10"):
+    def __init__(self):
         super().__init__('hand_control_node')
+        # 声明参数（带默认值）
+        self.declare_parameter('hand_type', 'left')
+        self.declare_parameter('hand_joint', 'L10')
+        self.declare_parameter('topic_hz', 30)
+        self.declare_parameter('is_touch', False)
+        
+        # 获取参数值
+        self.hand_type = self.get_parameter('hand_type').value
+        self.hand_joint = self.get_parameter('hand_joint').value
+        self.hz = self.get_parameter('topic_hz').value
+        self.is_touch = self.get_parameter('is_touch').value
         self.last_msg = []
-        self.publisher = self.create_publisher(JointState, f'/cb_{hand_type}_hand_control_cmd', 10)
-
+        self.publisher = self.create_publisher(JointState, f'/cb_{self.hand_type}_hand_control_cmd', 10)
+    def get_hand(self):
+        return self.hand_type,self.hand_joint,self.hz,self.is_touch
     def publish_control_cmd(self, msg):
         self.publisher.publish(msg)
 
@@ -23,13 +35,14 @@ class GuiApp(QWidget):
     handle_button_click = pyqtSignal(str)
     add_button_handle = pyqtSignal(str)
 
-    def __init__(self,hand_type="left",hand_joint="L10"):
+    def __init__(self,hand_type="left",hand_joint="L10",hz=30):
         super().__init__()
         self.hand_type = hand_type
         self.hand_joint = hand_joint
+        self.interval = 1.0 / hz  # 每次间隔 0.033 秒
         self.last_msg = JointState()
         #self.yaml = LoadWriteYaml()
-        self.setWindowTitle('ROS2 Control Panel')
+        self.setWindowTitle(f'ROS2 Control Linker Hand {hand_type} {hand_joint}')
         self.setFixedSize(800, 600)
         self.node = None
         self.buttons = []
@@ -154,8 +167,10 @@ class GuiApp(QWidget):
         self.thread_get_state.start()
     def pub_msg(self):
         while True:
+            start = time.time()
             self.node.publish_control_cmd(self.last_msg)
-            time.sleep(0.01) 
+            elapsed = time.time() - start
+            time.sleep(max(0, self.interval - elapsed))
 
 
     def joint_state_msg(self, pose,vel=[]):
@@ -193,10 +208,13 @@ class GuiApp(QWidget):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = HandControlNode(hand_type="right", hand_joint="L10")
+    node = HandControlNode()
+    time.sleep(1)
+    hand_type,hand_joint,hz,is_touch = node.get_hand()
+    
 
     app = QApplication(sys.argv)
-    gui = GuiApp(hand_type="right",hand_joint="L10")
+    gui = GuiApp(hand_type=hand_type,hand_joint=hand_joint,hz=hz)
     gui.node = node
     time.sleep(1)
     gui.loop_pub()

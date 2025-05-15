@@ -28,7 +28,10 @@ class LinkerHand(Node):
         self.hand_type = self.get_parameter('hand_type').value
         self.hand_joint = self.get_parameter('hand_joint').value
         self.is_touch = self.get_parameter('is_touch').value
+        self.last_left_hand_move_pose = []
+        self.last_right_hand_move_pose = []
         self.vel = []
+        self.version = []
         self.touch_type = -1
         self.t_force = [-1] * 5
         self.last_hand_info = {
@@ -48,6 +51,7 @@ class LinkerHand(Node):
             "vel": []
         }
         self.last_hand_matrix_touch = String()
+        self.last_hand_touch = String()
         self.open_can = OpenCan()
         self.open_can.open_can0()
         self.hand_setting_sub = self.create_subscription(String,'/cb_hand_setting_cmd', self.hand_setting_cb, 10)
@@ -74,7 +78,7 @@ class LinkerHand(Node):
         elif hand_type == "right":
             self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint)
             self.touch_type = self.api.get_touch_type()
-            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,10)
+            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,100)
             self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
             self.hand_state_pub = self.create_publisher(JointState, '/cb_right_hand_state',10)
             self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_right_hand_state_arc',10)
@@ -84,6 +88,7 @@ class LinkerHand(Node):
                     self.matrix_touch_pub = self.create_publisher(String, '/cb_right_hand_matrix_touch', 10)
                 elif self.touch_type != -1:
                     self.touch_pub = self.create_publisher(Float32MultiArray, '/cb_right_hand_force', 10)
+        self.version = self.api.get_version()
         pose = None
         torque = [200, 200, 200, 200, 200]
         speed = [200, 250, 250, 250, 250]
@@ -129,9 +134,15 @@ class LinkerHand(Node):
             # self.thread_get_touch.join()
 
     def run(self):
+        if self.is_touch == True and self.touch_type == -1:
+            ColorMsg(msg=f"配置错误，请检查", color="red")
+            return
         self.pub_hand_state(hand_state=self.last_hand_state)
         self.pub_hand_info(dic=self.last_hand_info)
-        self.matrix_touch_pub.publish(self.last_hand_matrix_touch)
+        if self.touch_type == 2:
+            self.matrix_touch_pub.publish(self.last_hand_matrix_touch)
+        elif self.touch_type != -1 and self.touch_type != 2:
+            self.touch_pub.publish(self.last_hand_touch)
 
 
     def _get_hand_state(self):
@@ -177,7 +188,7 @@ class LinkerHand(Node):
     def get_hand_info(self):
         while True:
             data = {
-                "version": self.api.get_version(), # Dexterous hand version number
+                "version": self.version, # Dexterous hand version number
                 "hand_joint": self.hand_joint, # Dexterous hand joint type
                 "speed": self.api.get_speed(), # Current speed threshold of the dexterous hand
                 "current": self.api.get_current(), # Current of the dexterous hand
@@ -214,7 +225,8 @@ class LinkerHand(Node):
                     t_force = self.t_force
                     force_msg = Float32MultiArray()
                     force_msg.data = t_force
-                    self.touch_pub.publish(force_msg)
+                    self.last_hand_touch = force_msg
+                    # self.touch_pub.publish(force_msg)
             time.sleep(0.04)
 
     def get_matrix_touch(self):
@@ -231,32 +243,35 @@ class LinkerHand(Node):
                 m_t = String()
                 m_t.data = json.dumps(matrix_dic)
                 self.last_hand_matrix_touch = m_t
-                
                 time.sleep(0.03)
 
     def left_hand_control_cb(self,msg):
         '''左手接收控制topic回调 for range'''
-        self.api.finger_move(pose=list(msg.position))
-        vel = list(msg.velocity)
-        self.vel = vel
-        if all(x == 0 for x in vel):
-            return
-        else:
-            if self.hand_joint == "L7" and len(vel) == 7:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L10" and len(vel) == 10:
-                speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L20" and len(vel) == 20:
-                speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L21" and len(vel) == 25:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L25" and len(vel) == 25:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
+        pose = list(msg.position)
+        if any(abs(a - b) > 2 for a, b in zip(pose, self.last_left_hand_move_pose)):
+            self.api.finger_move(pose=list(msg.position))
+            vel = list(msg.velocity)
+            self.vel = vel
+            if all(x == 0 for x in vel):
+                return
+            else:
+                if self.hand_joint == "L7" and len(vel) == 7:
+                    speed = vel
+                    self.api.set_joint_speed(speed=speed)
+                elif self.hand_joint == "L10" and len(vel) == 10:
+                    speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
+                    self.api.set_joint_speed(speed=speed)
+                elif self.hand_joint == "L20" and len(vel) == 20:
+                    speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
+                    self.api.set_joint_speed(speed=speed)
+                elif self.hand_joint == "L21" and len(vel) == 25:
+                    speed = vel
+                    self.api.set_joint_speed(speed=speed)
+                elif self.hand_joint == "L25" and len(vel) == 25:
+                    speed = vel
+                    self.api.set_joint_speed(speed=speed)
+        self.last_left_hand_move_pose = pose
+
     def left_hand_control_arc_cb(self,msg):
         '''左手接收控制topic回调 for arc'''
         pose_range = self.api.arc_to_range_left(msg.position,self.hand_joint)
@@ -284,6 +299,9 @@ class LinkerHand(Node):
 
     def right_hand_control_cb(self,msg):
         '''右手接收控制topic回调 for range'''
+        pose = list(msg.position)
+        if self.last_right_hand_move_pose == pose:
+            return
         self.api.finger_move(pose=list(msg.position))
         vel = list(msg.velocity)
         self.vel = vel
