@@ -48,6 +48,7 @@ class LinkerHand(Node):
             "vel": []
         }
         self.last_hand_matrix_touch = String()
+        self.last_hand_touch = String()
         self.open_can = OpenCan()
         self.open_can.open_can0()
         self.hand_setting_sub = self.create_subscription(String,'/cb_hand_setting_cmd', self.hand_setting_cb, 10)
@@ -74,7 +75,7 @@ class LinkerHand(Node):
         elif hand_type == "right":
             self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint)
             self.touch_type = self.api.get_touch_type()
-            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,10)
+            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,100)
             self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
             self.hand_state_pub = self.create_publisher(JointState, '/cb_right_hand_state',10)
             self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_right_hand_state_arc',10)
@@ -129,9 +130,15 @@ class LinkerHand(Node):
             # self.thread_get_touch.join()
 
     def run(self):
+        if self.is_touch == True and self.touch_type == -1:
+            ColorMsg(msg=f"配置错误，请检查", color="red")
+            return
         self.pub_hand_state(hand_state=self.last_hand_state)
         self.pub_hand_info(dic=self.last_hand_info)
-        self.matrix_touch_pub.publish(self.last_hand_matrix_touch)
+        if self.touch_type == 2:
+            self.matrix_touch_pub.publish(self.last_hand_matrix_touch)
+        elif self.touch_type != -1 and self.touch_type != 2:
+            self.touch_pub.publish(self.last_hand_touch)
 
 
     def _get_hand_state(self):
@@ -214,7 +221,8 @@ class LinkerHand(Node):
                     t_force = self.t_force
                     force_msg = Float32MultiArray()
                     force_msg.data = t_force
-                    self.touch_pub.publish(force_msg)
+                    self.last_hand_touch = force_msg
+                    # self.touch_pub.publish(force_msg)
             time.sleep(0.04)
 
     def get_matrix_touch(self):
@@ -231,7 +239,6 @@ class LinkerHand(Node):
                 m_t = String()
                 m_t.data = json.dumps(matrix_dic)
                 self.last_hand_matrix_touch = m_t
-                
                 time.sleep(0.03)
 
     def left_hand_control_cb(self,msg):

@@ -13,6 +13,10 @@ import sys,os,time,subprocess
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from color_msg import ColorMsg
 from load_write_yaml import LoadWriteYaml
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
 class OpenCan:
     def __init__(self,load_yaml=None):
         self.yaml = LoadWriteYaml()

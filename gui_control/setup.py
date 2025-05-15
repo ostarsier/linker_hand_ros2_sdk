@@ -27,7 +27,9 @@ setup(
     maintainer_email='linker-robot@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
-    tests_require=['pytest'],
+    extras_require={
+        'test': ['pytest'],
+    },
     entry_points={
         'console_scripts': [
             'gui_control = gui_control.gui_control:main'
