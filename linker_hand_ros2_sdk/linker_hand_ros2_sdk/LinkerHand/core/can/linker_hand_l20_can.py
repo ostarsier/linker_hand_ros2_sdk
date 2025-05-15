@@ -240,15 +240,15 @@ class LinkerHandL20Can:
         self.send_command(0x03,[])
         self.send_command(0x04,[])
         return self.x01 + self.x02 + self.x03 + self.x04
-    def get_force(self):
-        return [self.normal_force,self.tangential_force , self.tangential_force_dir , self.approach_inc]
+    #def get_force(self):
+        #return [self.normal_force,self.tangential_force , self.tangential_force_dir , self.approach_inc]
     def get_speed(self):
         '''获取当前电机速度'''
         self.send_command(0x05, [0])
         time.sleep(0.001)
         return self.x05
     def get_current(self):
-        '''获取当前电流'''
+        '''获取当前电流阈值'''
         self.send_command(0x06, [0])
         return self.x06
     def get_torque(self):
@@ -262,6 +262,15 @@ class LinkerHandL20Can:
     def clear_faults(self):
         '''清除电机故障'''
         self.send_command(0x07, [1, 1, 1, 1, 1])
+
+    def get_touch_type(self):
+        '''获取触摸类型 暂不支持'''
+        return [-1] * 5
+    
+    def get_touch(self):
+        '''获取触摸数据 暂不支持'''
+        return [-1] * 6
+
     def get_faults(self):
         '''获取电机故障码'''
         self.send_command(0x07, [])

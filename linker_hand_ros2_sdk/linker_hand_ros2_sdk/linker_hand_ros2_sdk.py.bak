@@ -1,12 +1,6 @@
 #!/usr/bin/env python3 
 # -*- coding: utf-8 -*-
 '''
-Author: HJX
-Date: 2025-04-01 13:55:14
-LastEditors: Please set LastEditors
-LastEditTime: 2025-04-09 18:36:21
-FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/linker_hand_ros2_sdk.py
-Description: 
 编译: colcon build --symlink-install
 启动命令:ros2 run linker_hand_ros2_sdk linker_hand_sdk
 '''
@@ -25,6 +19,16 @@ from linker_hand_ros2_sdk.LinkerHand.utils.color_msg import ColorMsg
 class LinkerHandRos2SDK(Node):
     def __init__(self, name):
         super().__init__(name)
+        # 声明参数（带默认值）
+        self.declare_parameter('hand_type', 'left')
+        self.declare_parameter('hand_joint', 'L10')
+        self.declare_parameter('is_touch', False)
+        
+        # 获取参数值
+        self.hand_type = self.get_parameter('hand_type').value
+        self.hand_joint = self.get_parameter('hand_joint').value
+        self.is_touch = self.get_parameter('is_touch').value
+
         self.yaml = LoadWriteYaml()
         self.config = self.yaml.load_setting_yaml()
         self.left_hand_exists = None

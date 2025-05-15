@@ -86,6 +86,11 @@ class LinkerHandL10Can:
         for i in range(2):
             time.sleep(0.01)
             self.send_frame(0x05, speed)
+    def set_speed(self,speed=[180]*5):
+        self.x05 = speed
+        for i in range(2):
+            time.sleep(0.01)
+            self.send_frame(0x05, speed)
     def request_all_status(self):
         """获取所有关节位置和压力。"""
         self.send_frame(FrameProperty.REQUEST_DATA_RETURN, [])
@@ -169,15 +174,20 @@ class LinkerHandL10Can:
         return self.version
     def get_current_status(self):
         '''获取当前关节状态'''
+        self.send_frame(0x01,[])
+        time.sleep(0.001)
+        self.send_frame(0x04,[])
+        time.sleep(0.001)
         return self.x01 + self.x04
     def get_speed(self):
         '''获取当前速度'''
         return self.x05
     def get_press(self):
-        '''获取当前扭矩'''
-        self.set_max_torque_limits(pressures=[0.0], type="get")
-        time.sleep(0.001)
-        return self.x02
+        '''暂不支持'''
+        # self.set_max_torque_limits(pressures=[0.0], type="get")
+        # time.sleep(0.001)
+        # return self.x02
+        return [None] * 5
     def get_force(self):
         '''获取压感数据'''
         return [self.normal_force,self.tangential_force , self.tangential_force_dir , self.approach_inc]
@@ -193,6 +203,9 @@ class LinkerHandL10Can:
         '''获取电机故障'''
         self.get_motor_fault_code()
         return self.x35+self.x36
+    def get_current(self):
+        '''获取电流'''
+        return [None]*10
     def close_can_interface(self):
         """Stop the CAN communication."""
         self.running = False

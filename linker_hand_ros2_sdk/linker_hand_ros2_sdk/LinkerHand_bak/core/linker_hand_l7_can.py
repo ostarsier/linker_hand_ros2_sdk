@@ -67,14 +67,19 @@ class LinkerHandL7Can:
         #self.send_frame(FrameProperty.MAX_PRESS_RCO, self.pressures)
     def set_torque(self,torque=[180] * 7):
         """设置L7最大扭矩限制"""
+        if len(torque) != 7:
+            raise ValueError("Torque list must have 7 elements.")
+            return
         self.send_frame(0x02, torque)
         
     def set_speed(self,speed=[180]*7):
         """设置L7速度"""
-        print(speed)
+        if len(speed) != 7:
+            raise ValueError("speed list must have 7 elements.")
+            return
         self.x05 = speed
         for i in range(2):
-            time.sleep(0.01)
+            time.sleep(0.001)
             self.send_frame(0x05, speed)
 
     ''' -------------------压力传感器---------------------- '''
@@ -151,14 +156,15 @@ class LinkerHandL7Can:
         return self.x01
     def get_speed(self):
         return self.x05
-    # def get_press(self):
-    #     self.set_max_torque_limits(pressures=[0.0], type="get")
-    #     time.sleep(0.001)
-    #     return self.x02
+    def get_current(self):
+        '''暂不支持'''
+        return [-1] * 7
     def get_torque(self):
-        self.send_frame(0x02, [])
-        time.sleep(0.001)
-        return self.x02
+        '''暂不支持'''
+        # self.send_frame(0x02, [])
+        # time.sleep(0.001)
+        # return self.x02
+        return [None] * 7
     def get_force(self):
         '''获取压力'''
         return [self.normal_force,self.tangential_force , self.tangential_force_dir , self.approach_inc]

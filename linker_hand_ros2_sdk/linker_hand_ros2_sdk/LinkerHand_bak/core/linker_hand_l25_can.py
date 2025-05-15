@@ -110,8 +110,7 @@ class FrameProperty(Enum):
     WHOLE_FRAME = 0xF0  # 整帧传输 | 返回一字节帧属性+整个结构体485及网络传输专属
 
 class LinkerHandL25Can:
-    def __init__(self, config, can_channel='can0', baudrate=1000000, can_id=0x28):
-        self.config = config
+    def __init__(self, can_channel='can0', baudrate=1000000, can_id=0x28):
         self.can_id = can_id
         self.running = True
         self.last_thumb_pos, self.last_index_pos,self.last_ring_pos,self.last_middle_pos, self.last_little_pos = None,None,None,None,None
@@ -126,6 +125,8 @@ class LinkerHandL25Can:
         self.x59,self.x5a,self.x5b,self.x5c,self.x5d = [],[],[],[],[]
         # 温度阈值
         self.x61,self.x62,self.x63,self.x64,self.x65 = [],[],[],[],[]
+        # 压感
+        self.x90,self.x91,self.x92,self.x93 = [],[],[],[]
         # 根据操作系统初始化 CAN 总线
         if sys.platform == "linux":
             self.bus = can.interface.Bus(
@@ -139,18 +140,6 @@ class LinkerHandL25Can:
             )
         else:
             raise EnvironmentError("Unsupported platform for CAN interface")
-
-        # 根据 can_id 初始化 publisher 和相关参数
-        if can_id == 0x28:  # 左手
-            self.hand_exists = config['LINKER_HAND']['LEFT_HAND']['EXISTS']
-            self.hand_joint = config['LINKER_HAND']['LEFT_HAND']['JOINT']
-            self.hand_names = config['LINKER_HAND']['LEFT_HAND']['NAME']
-        elif can_id == 0x27:  # 右手
-
-            self.hand_exists = config['LINKER_HAND']['RIGHT_HAND']['EXISTS']
-            self.hand_joint = config['LINKER_HAND']['RIGHT_HAND']['JOINT']
-            self.hand_names = config['LINKER_HAND']['RIGHT_HAND']['NAME']
-
 
         # 启动接收线程
         self.receive_thread = threading.Thread(target=self.receive_response)
@@ -171,7 +160,7 @@ class LinkerHandL25Can:
             #print(f"Message sent: ID={hex(self.can_id)}, Data={data}")
         except can.CanError as e:
             print(f"Failed to send message: {e}")
-        time.sleep(0.003)
+        time.sleep(0.001)
 
     def receive_response(self):
         """
@@ -191,32 +180,16 @@ class LinkerHandL25Can:
             l25_pose = self.joint_map(joint_ranges)
             # 使用列表推导式将列表每6个元素切成一个子数组
             chunks = [l25_pose[i:i+6] for i in range(0, 30, 6)]
-            # if self._list_d_value(self.last_thumb_pos, chunks[0]):
-            #     self.last_thumb_pos=chunks[0]
-            #     self.send_command(FrameProperty.THUMB_POS, chunks[0])
-            # if self._list_d_value(self.last_index_pos, chunks[1]):
-            #     self.last_index_pos=chunks[1]
-            #     self.send_command(FrameProperty.INDEX_POS, chunks[1])
-            # if self._list_d_value(self.last_middle_pos, chunks[2]):
-            #     self.last_middle_pos = chunks[2]
-            #     self.send_command(FrameProperty.MIDDLE_POS, chunks[2])
-            # if self._list_d_value(self.last_ring_pos, chunks[3]):
-            #     self.last_ring_pos = chunks[3]
-            #     self.send_command(FrameProperty.RING_POS, chunks[3])
-            # if self._list_d_value(self.last_little_pos, chunks[4]):
-            #     self.last_little_pos = chunks[4]
-            #     self.send_command(FrameProperty.LITTLE_POS, chunks[4])
-
             self.send_command(FrameProperty.THUMB_POS, chunks[0])
-            time.sleep(0.001)
+            #time.sleep(0.001)
             self.send_command(FrameProperty.INDEX_POS, chunks[1])
-            time.sleep(0.001)
+            #time.sleep(0.001)
             self.send_command(FrameProperty.MIDDLE_POS, chunks[2])
-            time.sleep(0.001)
+            #time.sleep(0.001)
             self.send_command(FrameProperty.RING_POS, chunks[3])
-            time.sleep(0.001)
+            #time.sleep(0.001)
             self.send_command(FrameProperty.LITTLE_POS, chunks[4])
-            time.sleep(0.001)
+            #time.sleep(0.001)
 
     def set_joint_positions_by_topic(self, joint_ranges):
         if len(joint_ranges) == 25:
@@ -274,6 +247,7 @@ class LinkerHandL25Can:
         self.send_command(FrameProperty.ROLL_POS, joint_ranges)
     # 设置所有手指航向关节位置
     def set_yaw_positions(self, joint_ranges):
+        print(joint_ranges)
         self.send_command(FrameProperty.YAW_POS, joint_ranges)
     # 设置所有手指指根1关节位置
     def set_root1_positions(self, joint_ranges):
@@ -357,12 +331,12 @@ class LinkerHandL25Can:
         self.send_command(0x85,j)
     
     # 设置所有手指扭矩
-    def set_torque(self,j=[250]*5):
-        t = j[0]
-        i = j[1]
-        m = j[2]
-        r = j[3]
-        l = j[4]
+    def set_torque(self,torque=[250]*5):
+        t = torque[0]
+        i = torque[1]
+        m = torque[2]
+        r = torque[3]
+        l = torque[4]
         self.set_thumb_torque(j=[t]*5)
         self.set_index_torque(j=[i]*5)
         self.set_middle_torque(j=[m]*5)
@@ -371,12 +345,18 @@ class LinkerHandL25Can:
     
     def set_speed(self, speed):
         self.speed = speed
-        ColorMsg(msg=f"L25设置速度为:{self.speed}", color="yellow")
-        thumb_speed = [self.speed[0]]*5
-        index_speed = [self.speed[1]]*5
-        middle_speed = [self.speed[2]]*5
-        ring_speed = [self.speed[3]]*5
-        little_speed = [self.speed[4]]*5
+        if len(speed) < 25:
+            thumb_speed = [self.speed[0]]*5
+            index_speed = [self.speed[1]]*5
+            middle_speed = [self.speed[2]]*5
+            ring_speed = [self.speed[3]]*5
+            little_speed = [self.speed[4]]*5
+        else:
+            thumb_speed = [self.speed[0],self.speed[1],self.speed[2],self.speed[3],self.speed[4]]
+            index_speed = [self.speed[5],self.speed[6],self.speed[7],self.speed[8],self.speed[9]]
+            middle_speed = [self.speed[10],self.speed[11],self.speed[12],self.speed[13],self.speed[14]]
+            ring_speed = [self.speed[15],self.speed[16],self.speed[17],self.speed[18],self.speed[19]]
+            little_speed = [self.speed[20],self.speed[21],self.speed[22],self.speed[23],self.speed[24]]
         self.send_command(FrameProperty.THUMB_SPEED, thumb_speed)
         self.send_command(FrameProperty.INDEX_SPEED, index_speed)
         self.send_command(FrameProperty.MIDDLE_SPEED, middle_speed)
@@ -479,6 +459,14 @@ class LinkerHandL25Can:
                 self.x64 = list(response_data)
             elif frame_type == 0x65:
                 self.x65 = list(response_data)
+            elif frame_type == 0x90:
+                self.x90 = list(response_data)
+            elif frame_type == 0x91:
+                self.x91 = list(response_data)
+            elif frame_type == 0x92:
+                self.x92 = list(response_data)
+            elif frame_type == 0x93:
+                self.x93 = list(response_data)
 
     # topic映射L25
     def joint_map(self, pose):
@@ -489,7 +477,7 @@ class LinkerHandL25Can:
         mapping = {
             0: 10,  1: 5,   2: 0,   3: 15,  4: None,  5: 20,
             6: None, 7: 6,   8: 1,   9: 16,  10: None, 11: 21,
-            12: None, 13: None, 14: 2,  15: 17, 16: None, 17: 22,
+            12: None, 13: 7, 14: 2,  15: 17, 16: None, 17: 22,
             18: None, 19: 8,  20: 3,   21: 18, 22: None, 23: 23,
             24: None, 25: 9,  26: 4,   27: 19, 28: None, 29: 24
         }
@@ -509,7 +497,7 @@ class LinkerHandL25Can:
         # 映射关系，字典中存储l25_state索引和pose索引之间的映射关系
         mapping = {
             0: 10,  1: 5,   2: 0,   3: 15,  5: 20,  7: 6,
-            8: 1,   9: 16,  11: 21, 14: 2,  15: 17, 17: 22,
+            8: 1,   9: 16,  11: 21, 13:7, 14: 2,  15: 17, 17: 22,
             19: 8,  20: 3,  21: 18, 23: 23, 25: 9,   26: 4,
             27: 19, 29: 24
         }
@@ -522,43 +510,43 @@ class LinkerHandL25Can:
     # 获取所有关节数据
     def get_current_status(self, j=''):
         self.send_command(FrameProperty.THUMB_POS, j)
-        time.sleep(0.005)
+        #time.sleep(0.001)
         self.send_command(FrameProperty.INDEX_POS,j)
-        time.sleep(0.005)
+        #time.sleep(0.001)
         self.send_command(FrameProperty.MIDDLE_POS,j)
-        time.sleep(0.005)
+        #time.sleep(0.001)
         self.send_command(FrameProperty.RING_POS,j)
-        time.sleep(0.005)
+        #time.sleep(0.001)
         self.send_command(FrameProperty.LITTLE_POS, j)
-        time.sleep(0.005)
+        #time.sleep(0.001)
         state= self.x41+ self.x42+ self.x43+ self.x44+ self.x45
         if len(state) == 30:
             l25_state = self.state_to_cmd(l25_state=state)
             return l25_state
     def get_current_state_topic(self):
         self.send_command(0x01,[])
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.send_command(0x02,[])
-        time.sleep(0.001)
+       # time.sleep(0.001)
         self.send_command(0x03,[])
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.send_command(0x04,[])
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.send_command(0x06,[])
-        time.sleep(0.001)
+        #time.sleep(0.001)
         state = self.x03+self.x02+self.x01+self.x04+self.x06
         return state
     def get_speed(self,j=''):
         self.send_command(FrameProperty.THUMB_SPEED, j) # 大拇指速度
-        time.sleep(0.01)
+        #time.sleep(0.01)
         self.send_command(FrameProperty.INDEX_SPEED, j) # 食指速度
-        time.sleep(0.01)
+        #time.sleep(0.01)
         self.send_command(FrameProperty.MIDDLE_SPEED, j) # 中指速度
-        time.sleep(0.01)
+        #time.sleep(0.01)
         self.send_command(FrameProperty.RING_SPEED, j) # 无名指速度
-        time.sleep(0.01)
+        #time.sleep(0.01)
         self.send_command(FrameProperty.LITTLE_SPEED, j) # 小拇指速度
-        time.sleep(0.01)
+        #time.sleep(0.01)
         speed = self.x49+ self.x4a+ self.x4b+ self.x4c+ self.x4d
         if len(speed) == 30:
             l25_speed = self.state_to_cmd(l25_state=speed)
@@ -570,15 +558,15 @@ class LinkerHandL25Can:
     #     return self.x06
     def get_fault(self):
         self.get_thumbn_fault()
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.get_index_fault()
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.get_middle_fault()
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.get_ring_fault()
-        time.sleep(0.001)
+        #time.sleep(0.001)
         self.get_little_fault()
-        time.sleep(0.001)
+        #time.sleep(0.001)
         return [self.x59]+[self.x5a]+[self.x5b]+[self.x5c]+[self.x5d]
     def get_threshold(self):
         self.get_thumb_threshold()
@@ -591,6 +579,30 @@ class LinkerHandL25Can:
         if self.xc1 == []:
             self.send_command(FrameProperty.HAND_HARDWARE_VERSION,[])
         return self.xc1
+    def get_normal_force(self):
+        self.send_command(FrameProperty.HAND_NORMAL_FORCE,[])
+        return self.x90
+    def get_tangential_force(self):
+        self.send_command(FrameProperty.HAND_TANGENTIAL_FORCE,[])
+        return self.x91
+    def get_tangential_force_dir(self):
+        self.send_command(FrameProperty.HAND_TANGENTIAL_FORCE_DIR,[])
+        return self.x92
+    def get_approach_inc(self):
+        self.send_command(FrameProperty.HAND_APPROACH_INC,[])
+        return self.x93
+    def get_force(self):
+        '''获取压感数据'''
+        return [self.x90,self.x91 , self.x92 , self.x93]
+    def get_current(self):
+        return [0] * 21
+    def get_temperature(self):
+        self.get_thumb_threshold()
+        self.get_index_threshold()
+        self.get_middle_threshold()
+        self.get_ring_threshold()
+        self.get_little_threshold()
+        return [self.x61]+[self.x62]+[self.x63]+[self.x64]+[self.x65]
     def close_can_interface(self):
         if self.bus:
             self.bus.shutdown()  # 关闭 CAN 总线

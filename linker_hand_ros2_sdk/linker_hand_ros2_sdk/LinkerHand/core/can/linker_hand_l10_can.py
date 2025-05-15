@@ -32,6 +32,28 @@ class LinkerHandL10Can:
         self.x33 = self.x34 = [0] * 5
         # 故障码
         self.x35,self.x36 = [0] * 5,[0] * 5
+        # 新压感
+        self.xb0,self.xb1,self.xb2,self.xb3,self.xb4,self.xb5 = [-1] * 5,[-1] * 5,[-1] * 5,[-1] * 5,[-1] * 5,[-1] * 5
+        
+        self.thumb_matrix = np.full((12, 6), -1)
+        self.index_matrix = np.full((12, 6), -1)
+        self.middle_matrix = np.full((12, 6), -1)
+        self.ring_matrix = np.full((12, 6), -1)
+        self.little_matrix = np.full((12, 6), -1)
+        self.matrix_map = {
+            0: 0,
+            16: 1,
+            32: 2,
+            48: 3,
+            64: 4,
+            80: 5,
+            96: 6,
+            112: 7,
+            128: 8,
+            144: 9,
+            160: 10,
+            176: 11,
+        }
         self.can_id = can_id
         self.joint_angles = [0] * 10
         self.pressures = [200] * 5  # 默认扭矩200
@@ -61,7 +83,7 @@ class LinkerHandL10Can:
             self.bus.send(msg)
         except can.CanError as e:
             print(f"Failed to send message: {e}")
-        time.sleep(0.002)
+        time.sleep(0.005)
 
     def set_joint_positions(self, joint_angles):
         """将10个关节的位置设置（joint_angles: 10个数值的列表）。"""
@@ -161,6 +183,48 @@ class LinkerHandL10Can:
                 self.x35 = list(response_data)
             elif frame_type == 0x36:
                 self.x36 = list(response_data)
+            elif frame_type == 0xb0:
+                self.xb0 = list(response_data)
+            elif frame_type == 0xb1:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb1 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.thumb_matrix[index] = d[1:]  # 去掉首个标志位
+            elif frame_type == 0xb2:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb2 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.index_matrix[index] = d[1:]  # 去掉首个标志位
+            elif frame_type == 0xb3:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb3 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.middle_matrix[index] = d[1:]  # 去掉首个标志位
+            elif frame_type == 0xb4:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb4 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.ring_matrix[index] = d[1:]  # 去掉首个标志位
+            elif frame_type == 0xb5:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb5 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.little_matrix[index] = d[1:]  # 去掉首个标志位
             elif frame_type == 0x64:
                 self.version = list(response_data)
 
@@ -183,11 +247,10 @@ class LinkerHandL10Can:
         '''获取当前速度'''
         return self.x05
     def get_press(self):
-        '''暂不支持'''
-        # self.set_max_torque_limits(pressures=[0.0], type="get")
-        # time.sleep(0.001)
-        # return self.x02
-        return [None] * 5
+        '''获取当前扭矩'''
+        self.set_max_torque_limits(pressures=[0.0], type="get")
+        time.sleep(0.001)
+        return self.x02
     def get_force(self):
         '''获取压感数据'''
         return [self.normal_force,self.tangential_force , self.tangential_force_dir , self.approach_inc]
@@ -196,9 +259,37 @@ class LinkerHandL10Can:
         self.get_motor_temperature()
         return self.x33+self.x34
 
-    def get_torque(self): 
-        self.send_frame(0x02,[])
-        return self.x02
+    def get_touch_type(self):
+        '''获取触摸类型'''
+        self.send_frame(0xb1,[])
+        time.sleep(0.002)
+        if len(self.xb1) == 2:
+            return 2
+        else:
+            return -1
+    
+    def get_touch(self):
+        '''获取触摸数据'''
+        self.send_frame(0xb1,[])
+        self.send_frame(0xb2,[])
+        self.send_frame(0xb3,[])
+        self.send_frame(0xb4,[])
+        self.send_frame(0xb5,[])
+        return [self.xb1[1],self.xb2[1],self.xb3[1],self.xb4[1],self.xb5[1],0] # 最后一位是手掌，目前没有
+    
+    def get_matrix_touch(self):
+        self.send_frame(0xb1,[0xc6])
+        self.send_frame(0xb2,[0xc6])
+        self.send_frame(0xb3,[0xc6])
+        self.send_frame(0xb4,[0xc6])
+        self.send_frame(0xb5,[0xc6])
+        # time.sleep(0.001)
+        return self.thumb_matrix , self.index_matrix , self.middle_matrix , self.ring_matrix , self.little_matrix
+
+    def get_torque(self):
+        '''暂不支持'''
+        
+        return [-1] * 5
     def get_fault(self):
         '''获取电机故障'''
         self.get_motor_fault_code()

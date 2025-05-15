@@ -19,6 +19,7 @@ class LoadWriteYaml():
         self.l7_positions = yaml_path+"/config/L7_positions.yaml"
         self.l10_positions = yaml_path+"/config/L10_positions.yaml"
         self.l20_positions = yaml_path+"/config/L20_positions.yaml"
+        self.l21_positions = yaml_path+"/config/L21_positions.yaml"
         self.l25_positions = yaml_path+"/config/L25_positions.yaml"
         
 
@@ -49,6 +50,8 @@ class LoadWriteYaml():
             action_path = self.l10_positions
         elif hand_joint == "L25":
             action_path = self.l25_positions
+        elif hand_joint == "L21":
+            action_path = self.l21_positions
         elif hand_joint == "L7":
             action_path = self.l7_positions
             print(action_path)
@@ -72,6 +75,8 @@ class LoadWriteYaml():
             action_path = self.l10_positions
         elif hand_joint == "L7":
             action_path = self.l7_positions
+        elif hand_joint == "L21":
+            action_path = self.l21_positions
         elif hand_joint == "L25":
             action_path = self.l25_positions
         try:

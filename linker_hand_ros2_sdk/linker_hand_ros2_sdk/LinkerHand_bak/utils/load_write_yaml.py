@@ -4,35 +4,22 @@
 Author: HJX
 Date: 2025-04-01 14:09:21
 LastEditors: Please set LastEditors
-LastEditTime: 2025-04-02 15:00:11
-FilePath: /linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/utils/load_write_yaml.py
+LastEditTime: 2025-04-11 10:19:01
+FilePath: /LinkerHand_Python_SDK/LinkerHand/utils/load_write_yaml.py
 Description: 
 symbol_custom_string_obkorol_copyright: 
 '''
 import yaml, os, sys
-from ament_index_python import get_package_prefix
-# # 获取当前脚本所在目录
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-# # 找到上上级目录
-# target_dir = os.path.abspath(os.path.join(current_dir, "../../../../../"))
-# # 添加到 sys.path
-# sys.path.append(target_dir)
-
-pkg_prefix = get_package_prefix('linker_hand_ros2_sdk')
-# 提取工作空间根路径（假设是标准 colcon 布局）
-ws_root = os.path.dirname(os.path.dirname(pkg_prefix))
-
-
-
 class LoadWriteYaml():
     def __init__(self):
         # 由于是API形式，这里要给配置文件目录绝对路径
-        yaml_path = "/home/linker-robot/ROS2/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
+        #yaml_path = "/home/linkerhand/ROS2/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
+        yaml_path = os.path.dirname(os.path.abspath(__file__)) + "/../../LinkerHand"
         self.setting_path = yaml_path+"/config/setting.yaml"
         self.l7_positions = yaml_path+"/config/L7_positions.yaml"
         self.l10_positions = yaml_path+"/config/L10_positions.yaml"
         self.l20_positions = yaml_path+"/config/L20_positions.yaml"
-        self.l24_positions = yaml_path+"/config/L24_positions.yaml"
+        self.l25_positions = yaml_path+"/config/L25_positions.yaml"
         
 
     def load_setting_yaml(self):
@@ -61,10 +48,7 @@ class LoadWriteYaml():
         elif hand_joint == "L10":
             action_path = self.l10_positions
         elif hand_joint == "L25":
-            #action_path = action_path + "L25_action.yaml"
-            pass
-        elif hand_joint == "L24":
-            action_path = self.l24_positions
+            action_path = self.l25_positions
         elif hand_joint == "L7":
             action_path = self.l7_positions
             print(action_path)
@@ -89,10 +73,7 @@ class LoadWriteYaml():
         elif hand_joint == "L7":
             action_path = self.l7_positions
         elif hand_joint == "L25":
-            #action_path = action_path + "L25_action.yaml"
-            pass
-        elif hand_joint == "L24":
-            action_path = self.l24_positions
+            action_path = self.l25_positions
         try:
             with open(action_path, 'r', encoding='utf-8') as file:
                 yaml_data = yaml.safe_load(file)
