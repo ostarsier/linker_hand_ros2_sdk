@@ -86,16 +86,12 @@ $ ros2 topic echo /cb_left_hand_control_cmd
 ## 通用
 - [0001-gui_control(图形界面控制)](图形界面控制)
 开启ROS2 SDK后
-- 修改gui_control.py文件内的参数为实际灵巧手型号
-```python
-第196行 node = HandControlNode(hand_type="right", hand_joint="L10")
-第199行 gui = GuiApp(hand_type="right",hand_joint="L10")
-```
+&ensp;&ensp; __使用前请先将 [gui_control.launch.py](linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/gui_control/launch/)文件内参数修改为实际Linker Hand灵巧手参数.__
 ```bash
 # 新开终端
 $ cd linker_hand_ros2_sdk/
 $ source ./install/setup.bash
-$ ros2 run gui_control gui_control
+$ ros2 launch gui_control gui_control.launch.py
 ```
 ## L7
 - [7001-action-group-show-ti(手指运动)](手指运动)
