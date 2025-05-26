@@ -1,3 +1,12 @@
+<!--
+ * @Author: HJX
+ * @Date: 2025-04-02 11:39:42
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2025-04-11 12:06:43
+ * @FilePath: /linker_hand_ros2_sdk/src/README_CN.md
+ * @Description: 
+ * @symbol_custom_string_obkorol_copyright: 
+-->
 # LinkerHand灵巧手ROS2 SDK
 
 ## 概述
@@ -25,8 +34,6 @@ LinkerHandROS2 SDK当前支持Ubuntu22.04 ROS humble Python3.10 及以上环境
 &ensp;&ensp; __使用前请先将 [setting.yaml](linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/config) 配置文件根据实际需求进行相应修改该.__
 &ensp;&ensp; __使用前请先将 [load_write_yaml.py](linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/utils/)文件第28行的yaml_path ="" 改为config目录的绝对路径.__
 
-&ensp;&ensp; __使用前请先将 [linker_hand.launch.py](linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/launch/) 配置文件根据实际需求进行相应修改该.__
-
 - 启动SDK&ensp;&ensp;&ensp;&ensp;将linker_hand灵巧手的USB转CAN设备插入Ubuntu设备上
 ```bash
   # 开启CAN端口
@@ -34,9 +41,15 @@ LinkerHandROS2 SDK当前支持Ubuntu22.04 ROS humble Python3.10 及以上环境
   $ cd linker_hand_ros2_sdk/
   $ colcon build --symlink-install
   $ source ./install/setup.bash
-  $ ros2 launch linker_hand_ros2_sdk linker_hand.launch.py
+  $ ros2 run linker_hand_ros2_sdk linker_hand_sdk
 ```
-
+- 启动状态波形图(带有压力传感器的LinkerHand)
+```bash
+# 启动ROS2 SDK后新开终端
+$ cd linker_hand_ros2_sdk/
+$ source ./install/setup.bash
+$ ros2 run graphic_display graphic_display
+```
 
 - position与手指关节对照表
 ```bash
@@ -63,9 +76,6 @@ $ ros2 topic echo /cb_left_hand_control_cmd
   L25: ["大拇指根部", "食指根部", "中指根部","无名指根部","小拇指根部","大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆","大拇指横滚","预留","预留","预留","预留","大拇指中部","食指中部","中指中部","无名指中部","小拇指中部","大拇指指尖","食指指尖","中指指尖","无名指指尖","小拇指指尖"]
 
 ## 版本更新
-- > ### release_2.1.4
-  - 1、支持矩阵式压力传感器
-
 - > ### release_1.0.3
   - 1、支持L20/L25版本灵巧手
 
@@ -86,21 +96,16 @@ $ ros2 topic echo /cb_left_hand_control_cmd
 ## 通用
 - [0001-gui_control(图形界面控制)](图形界面控制)
 开启ROS2 SDK后
-&ensp;&ensp; __使用前请先将 [gui_control.launch.py](linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/gui_control/launch/)文件内参数修改为实际Linker Hand灵巧手参数.__
 ```bash
 # 新开终端
 $ cd linker_hand_ros2_sdk/
 $ source ./install/setup.bash
-$ ros2 launch gui_control gui_control.launch.py
+$ ros2 run gui_control gui_control
 ```
 ## L7
 - [7001-action-group-show-ti(手指运动)](手指运动)
 
 ## L10
 - [10001-action-group-show-normal(手指运动)](手指运动)
-
-
-## Topic Document
-[Linker Hand Topic Document](doc/Topic-Reference.md)
 
 

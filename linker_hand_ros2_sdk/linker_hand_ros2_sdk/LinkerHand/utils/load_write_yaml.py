@@ -14,17 +14,8 @@ class LoadWriteYaml():
     def __init__(self):
         # 由于是API形式，这里要给配置文件目录绝对路径
         #yaml_path = "/home/linkerhand/ROS2/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
-        from ament_index_python.packages import get_package_share_directory
-        yaml_path = os.path.join(
-            get_package_share_directory('linker_hand_ros2_sdk'),
-            'LinkerHand',
-            'config'
-        )
-        setting_path = os.path.join(
-            get_package_share_directory('linker_hand_ros2_sdk'),
-            'LinkerHand', 'config', 'setting.yaml'
-        )
-        self.setting_path = setting_path
+        yaml_path = os.path.dirname(os.path.abspath(__file__)) + "/../../LinkerHand"
+        self.setting_path = yaml_path+"/config/setting.yaml"
         self.l7_positions = yaml_path+"/config/L7_positions.yaml"
         self.l10_positions = yaml_path+"/config/L10_positions.yaml"
         self.l20_positions = yaml_path+"/config/L20_positions.yaml"

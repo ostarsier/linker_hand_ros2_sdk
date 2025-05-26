@@ -26,9 +26,7 @@ setup(
     maintainer_email='linker-robot@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
-    extras_require={
-        'test': ['pytest'],
-    },
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'graphic_display = graphic_display.graphic_display:main'

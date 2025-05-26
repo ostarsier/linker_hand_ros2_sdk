@@ -2,8 +2,6 @@ import can
 import time, sys
 import threading
 import numpy as np
-from enum import Enum
-from sensor_msgs.msg import JointState
 
 
 class LinkerHandL7Can:
@@ -54,7 +52,7 @@ class LinkerHandL7Can:
         else:
             raise EnvironmentError("Unsupported platform for CAN interface")
 
-    def send_frame(self, frame_property, data_list):
+    def send_frame(self, frame_property, data_list,sleep=0.005):
         """Send a single CAN frame with specified properties and data."""
         frame_property_value = int(frame_property.value) if hasattr(frame_property, 'value') else frame_property
         data = [frame_property_value] + [int(val) for val in data_list]
@@ -63,7 +61,7 @@ class LinkerHandL7Can:
             self.bus.send(msg)
         except can.CanError as e:
             print(f"Failed to send message: {e}")
-        time.sleep(0.005)
+        time.sleep(sleep)
 
     def set_joint_positions(self, joint_angles):
         """Set the positions of 10 joints (joint_angles: list of 10 values)."""
@@ -100,16 +98,16 @@ class LinkerHandL7Can:
 
     ''' -------------------Pressure Sensors---------------------- '''
     def get_normal_force(self):
-        self.send_frame(0x20, [])
+        self.send_frame(0x20, [],sleep=0.01)
 
     def get_tangential_force(self):
-        self.send_frame(0x21, [])
+        self.send_frame(0x21, [],sleep=0.01)
 
     def get_tangential_force_dir(self):
-        self.send_frame(0x22, [])
+        self.send_frame(0x22, [],sleep=0.01)
 
     def get_approach_inc(self):
-        self.send_frame(0x23, [])
+        self.send_frame(0x23, [],sleep=0.01)
 
     ''' -------------------Motor Temperature---------------------- '''
     def get_motor_temperature(self):
@@ -165,7 +163,7 @@ class LinkerHandL7Can:
                 elif len(d) == 7:
                     index = self.matrix_map.get(d[0])
                     if index is not None:
-                        self.thumb_matrix[index] = d[1:]  # 去掉首个标志位
+                        self.thumb_matrix[index] = d[1:]  # Remove the first flag bit
             elif frame_type == 0xb2:
                 d = list(response_data)
                 if len(d) == 2:
@@ -173,7 +171,7 @@ class LinkerHandL7Can:
                 elif len(d) == 7:
                     index = self.matrix_map.get(d[0])
                     if index is not None:
-                        self.index_matrix[index] = d[1:]  # 去掉首个标志位
+                        self.index_matrix[index] = d[1:]  # Remove the first flag bit
             elif frame_type == 0xb3:
                 d = list(response_data)
                 if len(d) == 2:
@@ -181,7 +179,7 @@ class LinkerHandL7Can:
                 elif len(d) == 7:
                     index = self.matrix_map.get(d[0])
                     if index is not None:
-                        self.middle_matrix[index] = d[1:]  # 去掉首个标志位
+                        self.middle_matrix[index] = d[1:]  # Remove the first flag bit
             elif frame_type == 0xb4:
                 d = list(response_data)
                 if len(d) == 2:
@@ -189,7 +187,7 @@ class LinkerHandL7Can:
                 elif len(d) == 7:
                     index = self.matrix_map.get(d[0])
                     if index is not None:
-                        self.ring_matrix[index] = d[1:]  # 去掉首个标志位
+                        self.ring_matrix[index] = d[1:]  # Remove the first flag bit
             elif frame_type == 0xb5:
                 d = list(response_data)
                 if len(d) == 2:
@@ -197,18 +195,16 @@ class LinkerHandL7Can:
                 elif len(d) == 7:
                     index = self.matrix_map.get(d[0])
                     if index is not None:
-                        self.little_matrix[index] = d[1:]  # 去掉首个标志位
+                        self.little_matrix[index] = d[1:]  # Remove the first flag bit
             elif frame_type == 0x64: # L7 version number
                 self.version = list(response_data)
 
     def get_version(self):
-        self.send_frame(0x64, [])
-        time.sleep(0.001)
+        self.send_frame(0x64, [],sleep=0.1)
         return self.version
 
     def get_current_status(self):
-        self.send_frame(0x01, '')
-        time.sleep(0.001)
+        #self.send_frame(0x01, [],sleep=0.01)
         return self.x01
 
     def get_speed(self):
@@ -223,34 +219,33 @@ class LinkerHandL7Can:
         return [-1] * 7
 
     def get_touch_type(self):
-        '''获取触摸类型'''
+        '''Get touch type'''
         self.send_frame(0xb1,[])
-        time.sleep(0.002)
-        if len(self.xb1) == 2:
+        t = []
+        for i in range(3):
+            t = self.xb1
+            time.sleep(0.01)
+        if len(t) == 2:
             return 2
         else:
             return -1
 
     def get_touch(self):
-        '''获取触摸数据'''
-        self.send_frame(0xb1,[])
-        self.send_frame(0xb2,[])
-        self.send_frame(0xb3,[])
-        self.send_frame(0xb4,[])
-        self.send_frame(0xb5,[])
-        return [self.xb1[1],self.xb2[1],self.xb3[1],self.xb4[1],self.xb5[1],0] # 最后一位是手掌，目前没有
+        '''Get touch data'''
+        self.send_frame(0xb1,[],sleep=0.03)
+        self.send_frame(0xb2,[],sleep=0.03)
+        self.send_frame(0xb3,[],sleep=0.03)
+        self.send_frame(0xb4,[],sleep=0.03)
+        self.send_frame(0xb5,[],sleep=0.03)
+        return [self.xb1[1],self.xb2[1],self.xb3[1],self.xb4[1],self.xb5[1],0] # The last digit is palm, currently not available
     
     def get_matrix_touch(self):
-        self.send_frame(0xb1,[0xc6])
-        time.sleep(0.03)
-        self.send_frame(0xb2,[0xc6])
-        time.sleep(0.03)
-        self.send_frame(0xb3,[0xc6])
-        time.sleep(0.03)
-        self.send_frame(0xb4,[0xc6])
-        time.sleep(0.03)
-        self.send_frame(0xb5,[0xc6])
-        time.sleep(0.03)
+        self.send_frame(0xb1,[0xc6],sleep=0.015)
+        self.send_frame(0xb2,[0xc6],sleep=0.015)
+        self.send_frame(0xb3,[0xc6],sleep=0.015)
+        self.send_frame(0xb4,[0xc6],sleep=0.015)
+        self.send_frame(0xb5,[0xc6],sleep=0.015)
+
         return self.thumb_matrix , self.index_matrix , self.middle_matrix , self.ring_matrix , self.little_matrix
 
     def get_force(self):

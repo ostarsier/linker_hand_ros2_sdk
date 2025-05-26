@@ -1,114 +1,124 @@
-import sys
-import rclpy,time,threading
+#!/usr/bin/env python3 
+# -*- coding: utf-8 -*-
+'''
+Author: HJX
+Date: 2025-04-01 17:50:14
+LastEditors: Please set LastEditors
+LastEditTime: 2025-04-10 13:54:12
+FilePath: /linker_hand_ros2_sdk/src/gui_control/gui_control/gui_control.py
+Description: 
+编译: colcon build --symlink-install --packages-select gui_control
+启动命令:ros2 run gui_control gui_control
+'''
+from PyQt5.QtWidgets import QMainWindow, QSplitter, QApplication,QMessageBox,QPushButton
+from PyQt5.QtCore import Qt, QTimer
+import yaml, os, sys,time,json,rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Header, Float32MultiArray
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from views.left_view import LeftView
+from views.right_view import RightView
+# 获取当前脚本的路径，并计算 src 目录的绝对路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_path = os.path.join(current_dir, "../../src/linker_hand_ros2_sdk/")
+# 添加 src 目录到 Python 模块搜索路径
+sys.path.append(src_path)
+from linker_hand_ros2_sdk.LinkerHand.utils.init_linker_hand import InitLinkerHand
+from linker_hand_ros2_sdk.LinkerHand.utils.color_msg import ColorMsg
+from linker_hand_ros2_sdk.LinkerHand.utils.load_write_yaml import LoadWriteYaml
+from std_msgs.msg import String, Header
 from sensor_msgs.msg import JointState
+import threading
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSlider,
-    QLabel, QPushButton, QLineEdit, QGridLayout, QScrollArea
-)
 
-class HandControlNode(Node):
+
+class ROS2SliderPublisher(Node):
     def __init__(self):
-        super().__init__('hand_control_node')
-        # 声明参数（带默认值）
-        self.declare_parameter('hand_type', 'left')
-        self.declare_parameter('hand_joint', 'L10')
-        self.declare_parameter('topic_hz', 30)
-        self.declare_parameter('is_touch', False)
-        
-        # 获取参数值
-        self.hand_type = self.get_parameter('hand_type').value
-        self.hand_joint = self.get_parameter('hand_joint').value
-        self.hz = self.get_parameter('topic_hz').value
-        self.is_touch = self.get_parameter('is_touch').value
-        self.last_msg = []
-        self.publisher = self.create_publisher(JointState, f'/cb_{self.hand_type}_hand_control_cmd', 10)
-    def get_hand(self):
-        return self.hand_type,self.hand_joint,self.hz,self.is_touch
-    def publish_control_cmd(self, msg):
-        self.publisher.publish(msg)
+        super().__init__('slider_publisher')
+        self.init_pose = None
+        self.hand_type = None
+        self.hand_joint = None
+        self.last_position = None
+        self.running = True
+        self.left_hand_publisher_ = self.create_publisher(JointState, '/cb_left_hand_control_cmd', 10)
+        self.right_hand_publisher_ = self.create_publisher(JointState, '/cb_right_hand_control_cmd', 10)
+        self.publish_thread = threading.Thread(target=self.publish_value)
+        self.publish_thread.start()
+    
+    def set_hand_info(self,init_pose,hand_type,hand_joint):
+        self.init_pose=init_pose
+        self.last_position = init_pose
+        self.hand_type=hand_type
+        self.hand_joint=hand_joint
 
-class GuiApp(QWidget):
-    handle_button_click = pyqtSignal(str)
-    add_button_handle = pyqtSignal(str)
+    def publish_value(self):
+        rate = 1.0 / 60  # 60 FPS
+        while self.running:
+            if self.last_position == None:
+                continue
+            else:
+                l_p = [float(p) if p is not None else 0.0 for p in self.last_position]
+                msg = self.create_joint_state_msg(position=l_p, names=[])
+                if self.hand_type == "left":
+                    self.left_hand_publisher_.publish(msg)
+                else:
+                    self.right_hand_publisher_.publish(msg)
+                time.sleep(rate)
 
-    def __init__(self,hand_type="left",hand_joint="L10",hz=30):
+    
+    def create_joint_state_msg(self, position=[], names=[]):
+        msg = JointState()
+        # 设置 header（时间戳和坐标系）
+        msg.header = Header()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        #msg.header.frame_id = 'base_link'  # 可自定义
+        # 设置关节数据
+        msg.name = names  # 关节名称
+        msg.position = position            # 关节位置（弧度）
+        msg.velocity = [0.0] * len(position)             # 关节速度（可选）
+        msg.effort = [0.0] * len(position)              # 关节力矩（可选）
+        return msg
+
+class SliderApp(QMainWindow):
+    def __init__(self, ros_node):
         super().__init__()
-        self.hand_type = hand_type
-        self.hand_joint = hand_joint
-        self.interval = 1.0 / hz  # 每次间隔 0.033 秒
-        self.last_msg = JointState()
-        #self.yaml = LoadWriteYaml()
-        self.setWindowTitle(f'ROS2 Control Linker Hand {hand_type} {hand_joint}')
-        self.setFixedSize(800, 600)
-        self.node = None
-        self.buttons = []
-        self.control_sliders = []
-        self.slider_labels = {}
-        self.row = 0
-        self.column = 0
-        self.BUTTONS_PER_ROW = 3  # 每行最多 3 个按钮
-
-        main_layout = QHBoxLayout()
-        self.setLayout(main_layout)
-
-        # 左侧滑动条
-        self.left_layout = QVBoxLayout()
-        self.slider_list = ['Slider 1', 'Slider 2', 'Slider 3']
-        self.init_hand()
-        self.create_sliders(self.slider_list)
-        left_widget = QWidget()
-        left_widget.setLayout(self.left_layout)
-        main_layout.addWidget(left_widget, alignment=Qt.AlignTop)
-
-        # 右侧布局
-        # self.right_layout = QVBoxLayout()
-
-        # # 输入框 + 按钮
-        # input_layout = QHBoxLayout()
-        # self.input_field = QLineEdit(self)
-        # self.add_button = QPushButton('添加', self)
-        # self.add_button.clicked.connect(self.add_button_to_right_layout)
-        # input_layout.addWidget(self.input_field)
-        # input_layout.addWidget(self.add_button)
-
-        # self.right_layout.addLayout(input_layout)
-
-        # # 滚动区域
-        # self.scroll_area = QScrollArea()
-        # self.scroll_area.setWidgetResizable(True)
-
-        # self.scroll_widget = QWidget()
-        # self.scroll_layout = QGridLayout()
-        # self.scroll_layout.setContentsMargins(10, 5, 10, 10)
-        # self.scroll_layout.setSpacing(10)
-        # self.scroll_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-
-        # self.scroll_widget.setLayout(self.scroll_layout)
-        # self.scroll_area.setWidget(self.scroll_widget)
-
-        # self.right_layout.addWidget(self.scroll_area)
-        # main_layout.addLayout(self.right_layout)
-        # self.handle_button_click.connect(self.on_button_clicked)
+        self.yaml = LoadWriteYaml()
 
         
-
-
-    def init_hand(self):
+        self.ros_node = ros_node
+        self._init_hand()
+        self.ros_node.set_hand_info(self.init_pos,self.hand_type,self.hand_joint)
+        self._init_ui()
+    
+    def _init_hand(self):
+        self.yaml = LoadWriteYaml() # 初始化配置文件
+        # 读取配置文件
+        self.setting = self.yaml.load_setting_yaml()
+        # 判断左手是否配置
+        self.left_hand = False
+        self.right_hand = False
+        if self.setting['LINKER_HAND']['LEFT_HAND']['EXISTS'] == True:
+            self.left_hand = True
+        elif self.setting['LINKER_HAND']['RIGHT_HAND']['EXISTS'] == True:
+            self.right_hand = True
+        # gui控制只支持单手，这里进行左右手互斥
+        if self.left_hand == True and self.right_hand == True:
+            self.left_hand = True
+            self.right_hand = False
+        if self.left_hand == True:
+            print("左手")
+            self.hand_exists = True
+            self.hand_joint = self.setting['LINKER_HAND']['LEFT_HAND']['JOINT']
+            self.hand_type = "left"
+        if self.right_hand == True:
+            print("右手")
+            self.hand_exists = True
+            self.hand_joint = self.setting['LINKER_HAND']['RIGHT_HAND']['JOINT']
+            self.hand_type = "right"
+        
         if self.hand_joint == "L25":
-            # L25
             self.init_pos = [255] * 25
             # topic
             self.joint_name = ["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部","大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆","大拇指横滚","预留","预留","预留","预留","大拇指中部","食指中部","中指中部","无名指中部","小拇指中部","大拇指指尖","食指指尖","中指指尖","无名指指尖","小拇指指尖"]
-
-        elif self.hand_joint == "L21":
-            # L25
-            self.init_pos = [255] * 25
-            # topic
-            self.joint_name = ["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部","大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆","大拇指横滚","预留","预留","预留","预留","大拇指中部","预留","预留","预留","预留","大拇指指尖","食指指尖","中指指尖","无名指指尖","小拇指指尖"]
 
         elif self.hand_joint == "L20":
             self.init_pos = [255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255]
@@ -122,106 +132,73 @@ class GuiApp(QWidget):
             # L7
             self.init_pos = [250] * 7
             self.joint_name = ["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲","小拇指弯曲","拇指旋转"]
-        self.slider_list = self.joint_name
 
-    def on_button_clicked(self,text):
-        print("_-" * 20, flush=True)
-        print(text, flush=True)
-
-    def create_sliders(self, slider_names):
-        for name in slider_names:
-            slider = QSlider(Qt.Horizontal)
-            slider.setRange(0, 255)
-            slider.setValue(255)
-            slider.setTickPosition(QSlider.TicksBelow)
-            slider.setTickInterval(10)
-
-            label = QLabel(f"{name} 0:")
-            self.slider_labels[slider] = (label, name)
-
-            slider.valueChanged.connect(self.slider_value_changed)
-
-            h_layout = QHBoxLayout()
-            h_layout.addWidget(label)
-            h_layout.addWidget(slider)
-
-            item_widget = QWidget()
-            item_widget.setLayout(h_layout)
-
-            self.left_layout.addWidget(item_widget)
-            self.control_sliders.append(slider)
-
-    def slider_value_changed(self):
-        all_values = [slider.value() for slider in self.control_sliders]
-
-        sender_slider = self.sender()
-        if sender_slider in self.slider_labels:
-            label, name = self.slider_labels[sender_slider]
-            label.setText(f"{name} {sender_slider.value()}:")
-
-        self.last_msg = self.joint_state_msg(all_values)
-        
-    def loop_pub(self):
-        self.thread_get_state = threading.Thread(target=self.pub_msg)
-        self.thread_get_state.daemon = True
-        self.thread_get_state.start()
-    def pub_msg(self):
-        while True:
-            start = time.time()
-            self.node.publish_control_cmd(self.last_msg)
-            elapsed = time.time() - start
-            time.sleep(max(0, self.interval - elapsed))
-
-
-    def joint_state_msg(self, pose,vel=[]):
-        joint_state = JointState()
-        joint_state.header = Header()
-        joint_state.header.stamp = self.node.get_clock().now().to_msg()
-        joint_state.name = []
-        joint_state.position = [float(x) for x in pose]
-        if len(vel) > 1:
-            joint_state.velocity = [float(x) for x in vel]
+    def _init_ui(self):
+        if self.hand_type == "left":
+            self.setWindowTitle(f"Linker_Hand:左手- {self.hand_joint} Control - Qt5 with ROS")
         else:
-            joint_state.velocity = [0.0] * len(pose)
-        joint_state.effort = [0.0] * len(pose)
-        return joint_state
+            self.setWindowTitle(f"Linker_Hand:右手- {self.hand_joint} Control - Qt5 with ROS")
+        self.setGeometry(100, 100, 600, 800)
+        # 创建分割线
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.setStyleSheet("""
+            QSplitter::handle {
+                width:1px;
+                background-color: lightgray;
+                margin: 15px 20px;
+            }
+        """)
+        # 左侧滑动条界面
+        self.left_view = LeftView(joint_name=self.joint_name, init_pos=self.init_pos,hand_type=self.hand_type)
+        splitter.addWidget(self.left_view)
+        self.left_view.slider_value_changed.connect(self.handle_slider_value_changed)
+        # 右侧记录动作界面
+        self.right_view = RightView(hand_joint=self.hand_joint, hand_type=self.hand_type, load_yaml=self.yaml)
+        splitter.addWidget(self.right_view)
+        # 接收到信号槽事件，这里用于记录动作序列更新滑动条数据
+        self.right_view.handle_button_click.connect(self.handle_button_click)
+        self.right_view.add_button_handle.connect(self.add_button_handle)
+        splitter.setSizes([600, 450])
+        self.setCentralWidget(splitter)
 
-    def add_button_to_right_layout(self):
-        text = self.input_field.text().strip()
-        if text:
-            button = QPushButton(text)
-            button.setFixedSize(100, 30)
-            button.clicked.connect(lambda checked, text=text: self.handle_button_click.emit(text))
+    # 通过信号机制实时获取滑动条的当前值
+    def handle_slider_value_changed(self, slider_values):
+        #print("实时获取滑动条的当前值:", slider_values)
+        slider_values_list = []
+        for key in slider_values:
+            slider_values_list.append(slider_values[key])
+        self.last_position = slider_values_list
+        self.ros_node.set_hand_info(self.last_position,self.hand_type,self.hand_joint)
 
-            # 添加到网格布局
-            self.scroll_layout.addWidget(button, self.row, self.column, alignment=Qt.AlignLeft | Qt.AlignTop)
 
-            # 更新行列位置
-            self.column += 1
-            if self.column >= self.BUTTONS_PER_ROW:
-                self.column = 0
-                self.row += 1
+    # 点击按钮后将动作数值写入yaml文件
+    def handle_button_click(self,text):
+        all_action = self.yaml.load_action_yaml(hand_type=self.hand_type,hand_joint=self.hand_joint)
+        for index,pos in enumerate(all_action):
+            if pos['ACTION_NAME'] == text:
+                position = pos['POSITION']
+                print(type(position))
+        ColorMsg(msg=f"动作名称:{text}, 动作数值:{position}", color="green")
+        self.last_position = position
+        self.left_view.set_slider_values(values=position)
 
-            self.input_field.clear()
-            self.buttons.append(button)
-            self.add_button_handle.emit(text)
+    #点击添加按钮后将动作数值写入yaml文件
+    def add_button_handle(self,text):
+        self.add_button_position = self.left_view.get_slider_values()
+        self.add_button_text = text
+        self.yaml.write_to_yaml(action_name=text, action_pos=self.left_view.get_slider_values(),hand_joint=self.hand_joint,hand_type=self.hand_type)
+        
+    def on_slider_value_changed(self, value):
+        self.label.setText(f'Value: {value}')
+        self.ros_node.publish_value(value)
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = HandControlNode()
-    time.sleep(1)
-    hand_type,hand_joint,hz,is_touch = node.get_hand()
-    
 
+def main():
+    rclpy.init()
+    ros_node = ROS2SliderPublisher()
     app = QApplication(sys.argv)
-    gui = GuiApp(hand_type=hand_type,hand_joint=hand_joint,hz=hz)
-    gui.node = node
-    time.sleep(1)
-    gui.loop_pub()
-    gui.show()
-
+    slider_app = SliderApp(ros_node)
+    slider_app.show()
+    
     sys.exit(app.exec_())
-    rclpy.shutdown()
 
-if __name__ == '__main__':
-    main()
