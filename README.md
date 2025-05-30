@@ -41,9 +41,9 @@ Download
   # Enable CAN port
   $ sudo /usr/sbin/ip link set can0 up type can bitrate 1000000 #USB-to-CAN device with blue light constantly on
   $ cd linker_hand_ros2_sdk/
-  $ colcon build --symlink-install
+  $ colcon build
   $ source ./install/setup.bash
-  $ ros2 run linker_hand_ros2_sdk linker_hand_sdk
+  $ ros2 launch linker_hand_ros2_sdk linker_hand.launch.py
 ```
 * Launch the status waveform plot (for LinkerHand with pressure sensors) 
 ```bash 
@@ -53,6 +53,11 @@ Download
  $ ros2 run graphic_display graphic_display
 ```
 ## 4. Version Information
+* release_2.1.4
+
+  * 1、Support matrix pressure sensors
+  * 2、with newly added support for L21
+
 * release_1.0.3
 
   * 1、Compatible with L20/L25 Dexterous Hand Models
