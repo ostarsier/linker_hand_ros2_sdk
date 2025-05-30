@@ -146,7 +146,7 @@ class LinkerHandRos2SDK(Node):
         
     def pub_linker_hand_state(self):
         '''发布灵巧手状态'''
-        rate = 1.0 / 60  # 60 FPS
+        rate = 1.0 / 30  # 60 FPS
         while rclpy.ok():
             if self.left_hand_exists == True:
                 left_force = self.left_hand_api.get_force()
