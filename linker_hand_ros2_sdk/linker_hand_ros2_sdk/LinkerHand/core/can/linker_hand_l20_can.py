@@ -246,7 +246,7 @@ class LinkerHandL20Can:
 
     def get_touch_type(self):
         '''Get touch type, not supported'''
-        return [-1] * 5
+        return -1
     
     def get_touch(self):
         '''Get touch data, not supported'''
