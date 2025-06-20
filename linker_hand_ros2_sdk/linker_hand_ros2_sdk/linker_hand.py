@@ -58,8 +58,8 @@ class LinkerHand(Node):
         self.open_can.open_can(self.can)
         self.hand_setting_sub = self.create_subscription(String,'/cb_hand_setting_cmd', self.hand_setting_cb, 10)
         self.last_process_time = 0
-        self.max_hz = 30
-        self.min_interval = 1.0 / (self.max_hz / 2)
+        self.max_hz = 10
+        self.min_interval = 1.0 / self.max_hz
         self.lock = threading.Lock()
         self.init_hand(hand_type=self.hand_type)
 
@@ -254,29 +254,27 @@ class LinkerHand(Node):
         self.last_process_time = now
         '''左手接收控制topic回调 for range'''
         pose = list(msg.position)
-        if any(abs(a - b) > 2 for a, b in zip(pose, self.last_left_hand_move_pose)):
-            self.api.finger_move(pose=list(msg.position))
-            vel = list(msg.velocity)
-            self.vel = vel
-            if all(x == 0 for x in vel):
-                return
-            else:
-                if self.hand_joint == "L7" and len(vel) == 7:
-                    speed = vel
-                    self.api.set_joint_speed(speed=speed)
-                elif self.hand_joint == "L10" and len(vel) == 10:
-                    speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
-                    self.api.set_joint_speed(speed=speed)
-                elif self.hand_joint == "L20" and len(vel) == 20:
-                    speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
-                    self.api.set_joint_speed(speed=speed)
-                elif self.hand_joint == "L21" and len(vel) == 25:
-                    speed = vel
-                    self.api.set_joint_speed(speed=speed)
-                elif self.hand_joint == "L25" and len(vel) == 25:
-                    speed = vel
-                    self.api.set_joint_speed(speed=speed)
-        self.last_left_hand_move_pose = pose
+        self.api.finger_move(pose=list(msg.position))
+        vel = list(msg.velocity)
+        self.vel = vel
+        if all(x == 0 for x in vel):
+            return
+        else:
+            if self.hand_joint == "L7" and len(vel) == 7:
+                speed = vel
+                self.api.set_joint_speed(speed=speed)
+            elif self.hand_joint == "L10" and len(vel) == 10:
+                speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
+                self.api.set_joint_speed(speed=speed)
+            elif self.hand_joint == "L20" and len(vel) == 20:
+                speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
+                self.api.set_joint_speed(speed=speed)
+            elif self.hand_joint == "L21" and len(vel) == 25:
+                speed = vel
+                self.api.set_joint_speed(speed=speed)
+            elif self.hand_joint == "L25" and len(vel) == 25:
+                speed = vel
+                self.api.set_joint_speed(speed=speed)
 
     def left_hand_control_arc_cb(self,msg):
         now = time.time()
@@ -314,8 +312,6 @@ class LinkerHand(Node):
         self.last_process_time = now
         '''右手接收控制topic回调 for range'''
         pose = list(msg.position)
-        if self.last_right_hand_move_pose == pose:
-            return
         self.api.finger_move(pose=list(msg.position))
         vel = list(msg.velocity)
         self.vel = vel
