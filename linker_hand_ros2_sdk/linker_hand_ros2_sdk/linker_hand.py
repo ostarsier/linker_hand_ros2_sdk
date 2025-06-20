@@ -59,7 +59,7 @@ class LinkerHand(Node):
         self.hand_setting_sub = self.create_subscription(String,'/cb_hand_setting_cmd', self.hand_setting_cb, 10)
         self.last_process_time = 0
         self.max_hz = 30
-        self.min_interval = 1.0 / self.max_hz
+        self.min_interval = 1.0 / (self.max_hz / 2)
         self.lock = threading.Lock()
         self.init_hand(hand_type=self.hand_type)
 
@@ -104,6 +104,7 @@ class LinkerHand(Node):
             speed = [120, 250, 250, 250, 250, 250, 250]
         elif self.hand_joint == "L10":
             pose = [255, 200, 255, 255, 255, 255, 180, 180, 180, 41]
+            speed = [200, 250, 250, 250, 250, 250, 250, 250, 250, 250]
         elif self.hand_joint == "L20":
             pose = [255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255]
         elif self.hand_joint == "L21":
@@ -184,22 +185,21 @@ class LinkerHand(Node):
     
     def get_hand_info(self):
         while True:
-            with self.lock:
-                if self.hand_info_pub.get_subscription_count() > 0:
-                    data = {
-                        "version": self.version, # Dexterous hand version number
-                        "hand_joint": self.hand_joint, # Dexterous hand joint type
-                        "speed": self.api.get_speed(), # Current speed threshold of the dexterous hand
-                        "current": self.api.get_current(), # Current of the dexterous hand
-                        "fault": self.api.get_fault(), # Current fault of the dexterous hand
-                        "motor_temperature": self.api.get_temperature(), # Current motor temperature of the dexterous hand
-                        "torque": self.api.get_torque(), # Current torque of the dexterous hand
-                        "is_touch":self.is_touch,
-                        "touch_type": self.touch_type,
-                        "finger_order": self.api.get_finger_order() # Finger motor order
-                    }
-                    #self.last_hand_info = data
-                    self.pub_hand_info(dic=data)
+            if self.hand_info_pub.get_subscription_count() > 0:
+                data = {
+                    "version": self.version, # Dexterous hand version number
+                    "hand_joint": self.hand_joint, # Dexterous hand joint type
+                    "speed": self.api.get_speed(), # Current speed threshold of the dexterous hand
+                    "current": self.api.get_current(), # Current of the dexterous hand
+                    "fault": self.api.get_fault(), # Current fault of the dexterous hand
+                    "motor_temperature": self.api.get_temperature(), # Current motor temperature of the dexterous hand
+                    "torque": self.api.get_torque(), # Current torque of the dexterous hand
+                    "is_touch":self.is_touch,
+                    "touch_type": self.touch_type,
+                    "finger_order": self.api.get_finger_order() # Finger motor order
+                }
+                #self.last_hand_info = data
+                self.pub_hand_info(dic=data)
             time.sleep(0.1)
 
     def pub_hand_info(self,dic):
@@ -209,44 +209,43 @@ class LinkerHand(Node):
 
     def get_hand_touch(self):
         while True:
-            with self.lock:
-                if self.touch_pub.get_subscription_count() > 0:
-                    if self.is_touch == True:
-                        #self.touch_type = self.api.get_touch_type()
-                        if self.touch_type == 2:
-                            break
-                            self.t_force = self.api.get_touch()
-                        elif self.touch_type != -1:
-                            force = self.api.get_force()
-                            self.t_force = [item for sublist in force for item in sublist]
-                    else:
-                        self.touch_type = -1
-                    if self.is_touch == True:
-                        if self.touch_type != 2 and self.touch_type !=-1:
-                            t_force = self.t_force
-                            force_msg = Float32MultiArray()
-                            force_msg.data = t_force
-                            self.last_hand_touch = force_msg
-                        self.touch_pub.publish(force_msg)
+            if self.touch_pub.get_subscription_count() > 0:
+                if self.is_touch == True:
+                    #self.touch_type = self.api.get_touch_type()
+                    if self.touch_type == 2:
+                        break
+                        self.t_force = self.api.get_touch()
+                    elif self.touch_type != -1:
+                        force = self.api.get_force()
+                        self.t_force = [item for sublist in force for item in sublist]
+                else:
+                    self.touch_type = -1
+                if self.is_touch == True:
+                    if self.touch_type != 2 and self.touch_type !=-1:
+                        t_force = self.t_force
+                        force_msg = Float32MultiArray()
+                        force_msg.data = t_force
+                        self.last_hand_touch = force_msg
+                    self.touch_pub.publish(force_msg)
             time.sleep(0.04)
 
     def get_matrix_touch(self):
         while True:
-            with self.lock:
-                if self.matrix_touch_pub.get_subscription_count() > 0:
-                    if self.touch_type == 2:
-                        thumb_matrix, index_matrix , middle_matrix , ring_matrix , little_matrix = self.api.get_matrix_touch()
-                        matrix_dic = {
-                            "thumb_matrix":thumb_matrix.tolist(),
-                            "index_matrix":index_matrix.tolist(),
-                            "middle_matrix":middle_matrix.tolist(),
-                            "ring_matrix":ring_matrix.tolist(),
-                            "little_matrix":little_matrix.tolist()
-                        }
-                        m_t = String()
-                        m_t.data = json.dumps(matrix_dic)
-                        self.matrix_touch_pub.publish(m_t)
-            #time.sleep(0.01)
+            if self.matrix_touch_pub.get_subscription_count() > 0:
+                if self.touch_type == 2:
+                    thumb_matrix, index_matrix , middle_matrix , ring_matrix , little_matrix = self.api.get_matrix_touch()
+                    matrix_dic = {
+                        "thumb_matrix":thumb_matrix.tolist(),
+                        "index_matrix":index_matrix.tolist(),
+                        "middle_matrix":middle_matrix.tolist(),
+                        "ring_matrix":ring_matrix.tolist(),
+                        "little_matrix":little_matrix.tolist()
+                    }
+                    # print(matrix_dic,flush=True)
+                    m_t = String()
+                    m_t.data = json.dumps(matrix_dic)
+                    self.matrix_touch_pub.publish(m_t)
+            time.sleep(0.01)
 
     def left_hand_control_cb(self,msg):
         now = time.time()
