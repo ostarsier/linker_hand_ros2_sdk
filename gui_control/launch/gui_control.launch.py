@@ -9,13 +9,25 @@ def generate_launch_description():
         Node(
             package='gui_control',
             executable='gui_control',
-            name='hand_control_node',
+            name='left_hand_control_node',
             output='screen',
             parameters=[{
                 'hand_type': 'left',
-                'hand_joint': "L10",
+                'hand_joint': "L20",
                 'topic_hz': 30,
                 'is_touch': True,
             }],
         ),
+        # Node(
+        #     package='gui_control',
+        #     executable='gui_control',
+        #     name='right_hand_control_node',
+        #     output='screen',
+        #     parameters=[{
+        #         'hand_type': 'right',
+        #         'hand_joint': "L10",
+        #         'topic_hz': 30,
+        #         'is_touch': True,
+        #     }],
+        # ),
     ])

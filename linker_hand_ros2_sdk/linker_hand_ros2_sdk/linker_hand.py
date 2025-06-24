@@ -55,10 +55,9 @@ class LinkerHand(Node):
         self.last_hand_matrix_touch = String()
         self.last_hand_touch = String()
         self.open_can = OpenCan()
-        self.open_can.open_can(self.can)
         self.hand_setting_sub = self.create_subscription(String,'/cb_hand_setting_cmd', self.hand_setting_cb, 10)
         self.last_process_time = 0
-        self.max_hz = 10
+        self.max_hz = 30
         self.min_interval = 1.0 / self.max_hz
         self.lock = threading.Lock()
         self.init_hand(hand_type=self.hand_type)
@@ -68,7 +67,9 @@ class LinkerHand(Node):
 
     def init_hand(self,hand_type):
         if hand_type == "left":
-            self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint)
+            self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint,can=self.can)
+            self.open_can.open_can(self.can)
+            time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
             self.hand_cmd_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd', self.left_hand_control_cb,10)
             self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd_arc', self.left_hand_control_arc_cb,10)
@@ -81,7 +82,9 @@ class LinkerHand(Node):
                 elif self.touch_type != -1:
                     self.touch_pub = self.create_publisher(Float32MultiArray, '/cb_left_hand_force', 10)
         elif hand_type == "right":
-            self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint)
+            self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint,can=self.can)
+            self.open_can.open_can(self.can)
+            time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
             self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,100)
             self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)

@@ -3,6 +3,7 @@ import time
 import can
 import threading
 from enum import Enum
+import numpy as np
 
 class FrameProperty(Enum):
     INVALID_FRAME_PROPERTY = 0x00  # Invalid CAN frame property | No return
@@ -33,6 +34,28 @@ class LinkerHandL20Can:
         self.can_id = can_id
         self.running = True
         self.x05, self.x06, self.x07 = [],[],[]
+        # New pressure sensors
+        self.xb0,self.xb1,self.xb2,self.xb3,self.xb4,self.xb5 = [-1] * 5,[-1] * 5,[-1] * 5,[-1] * 5,[-1] * 5,[-1] * 5
+        
+        self.thumb_matrix = np.full((12, 6), -1)
+        self.index_matrix = np.full((12, 6), -1)
+        self.middle_matrix = np.full((12, 6), -1)
+        self.ring_matrix = np.full((12, 6), -1)
+        self.little_matrix = np.full((12, 6), -1)
+        self.matrix_map = {
+            0: 0,
+            16: 1,
+            32: 2,
+            48: 3,
+            64: 4,
+            80: 5,
+            96: 6,
+            112: 7,
+            128: 8,
+            144: 9,
+            160: 10,
+            176: 11,
+        }
         
         # Initialize CAN bus according to operating system
         if sys.platform == "linux":
@@ -58,21 +81,21 @@ class LinkerHandL20Can:
         self.receive_thread.daemon = True
         self.receive_thread.start()
 
-    def send_command(self, frame_property, data_list):
-        print("66666")
-        """
-        Send command to CAN bus
-        :param frame_property: Data frame property
-        :param data_list: Data payload
-        """
-        frame_property_value = int(frame_property.value) if hasattr(frame_property, 'value') else frame_property
-        data = [frame_property_value] + [int(val) for val in data_list]
-        msg = can.Message(arbitration_id=self.can_id, data=data, is_extended_id=False)
-        try:
-            self.bus.send(msg)
-            print(f"Message sent: ID={hex(self.can_id)}, Data={data}")
-        except can.CanError as e:
-            print(f"Failed to send message: {e}")
+    # def send_command(self, frame_property, data_list):
+    #     print("66666")
+    #     """
+    #     Send command to CAN bus
+    #     :param frame_property: Data frame property
+    #     :param data_list: Data payload
+    #     """
+    #     frame_property_value = int(frame_property.value) if hasattr(frame_property, 'value') else frame_property
+    #     data = [frame_property_value] + [int(val) for val in data_list]
+    #     msg = can.Message(arbitration_id=self.can_id, data=data, is_extended_id=False)
+    #     try:
+    #         self.bus.send(msg)
+    #         print(f"Message sent: ID={hex(self.can_id)}, Data={data}")
+    #     except can.CanError as e:
+    #         print(f"Failed to send message: {e}")
 
     def receive_response(self):
         """
@@ -98,7 +121,7 @@ class LinkerHandL20Can:
     def set_thumb_roll(self, angle):
         self.send_command(FrameProperty.JOINT_ROLL_R, angle)
 
-    def send_command(self, frame_property, data_list):
+    def send_command(self, frame_property, data_list,sleep=0.002):
         frame_property_value = int(frame_property.value) if hasattr(frame_property, 'value') else frame_property
         data = [frame_property_value] + [int(val) for val in data_list]
         
@@ -107,7 +130,7 @@ class LinkerHandL20Can:
             self.bus.send(msg)
         except can.CanError:
             print("Message NOT sent")
-        time.sleep(0.002)
+        time.sleep(sleep)
 
     def set_joint_pitch(self, frame, angles):
         self.send_command(frame, angles)
@@ -186,6 +209,48 @@ class LinkerHandL20Can:
             elif frame_type == 0x23:
                 d = list(response_data)
                 self.approach_inc = [float(i) for i in d]
+            elif frame_type == 0xb0:
+                self.xb0 = list(response_data)
+            elif frame_type == 0xb1:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb1 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.thumb_matrix[index] = d[1:]  # Remove the first flag bit
+            elif frame_type == 0xb2:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb2 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.index_matrix[index] = d[1:]  # Remove the first flag bit
+            elif frame_type == 0xb3:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb3 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.middle_matrix[index] = d[1:]  # Remove the first flag bit
+            elif frame_type == 0xb4:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb4 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.ring_matrix[index] = d[1:]  # Remove the first flag bit
+            elif frame_type == 0xb5:
+                d = list(response_data)
+                if len(d) == 2:
+                    self.xb5 = d
+                elif len(d) == 7:
+                    index = self.matrix_map.get(d[0])
+                    if index is not None:
+                        self.little_matrix[index] = d[1:]  # Remove the first flag bit
     def pose_slice(self, p):
         """Slice the joint array into finger action arrays"""
         try:
@@ -243,14 +308,36 @@ class LinkerHandL20Can:
     def clear_faults(self):
         '''Clear motor faults'''
         self.send_command(0x07, [1, 1, 1, 1, 1])
-
     def get_touch_type(self):
-        '''Get touch type, not supported'''
-        return -1
+        '''Get touch type'''
+        self.send_command(0xb0,[],sleep=0.03)
+        self.send_command(0xb1,[],sleep=0.03)
+        t = []
+        for i in range(3):
+            t = self.xb1
+            time.sleep(0.01)
+        if len(t) == 2:
+            return 2
+        else:
+            return -1
     
     def get_touch(self):
-        '''Get touch data, not supported'''
-        return [-1] * 6
+        '''Get touch data'''
+        self.send_command(0xb1,[],sleep=0.03)
+        self.send_command(0xb2,[],sleep=0.03)
+        self.send_command(0xb3,[],sleep=0.03)
+        self.send_command(0xb4,[],sleep=0.03)
+        self.send_command(0xb5,[],sleep=0.03)
+        return [self.xb1[1],self.xb2[1],self.xb3[1],self.xb4[1],self.xb5[1],0] # The last digit is palm, currently not available
+
+    def get_matrix_touch(self):
+        self.send_command(0xb1,[0xc6],sleep=0.04)
+        self.send_command(0xb2,[0xc6],sleep=0.04)
+        self.send_command(0xb3,[0xc6],sleep=0.04)
+        self.send_command(0xb4,[0xc6],sleep=0.04)
+        self.send_command(0xb5,[0xc6],sleep=0.04)
+        return self.thumb_matrix , self.index_matrix , self.middle_matrix , self.ring_matrix , self.little_matrix
+
 
     def get_faults(self):
         '''Get motor fault codes'''

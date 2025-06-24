@@ -12,6 +12,7 @@ def generate_launch_description():
                 'hand_type': 'left',
                 'hand_joint': "L10", # 这里需要修改为实际Linker Hand的型号 L7、L10、L20、L21、L25
                 'is_touch': True, # 是否带有压力传感器
+                'can': 'can0',
             }],
         ),
 
@@ -24,6 +25,7 @@ def generate_launch_description():
                 'hand_type': 'right',
                 'hand_joint': "L10", # 这里需要修改为实际Linker Hand的型号 L7、L10、L20、L21、L25
                 'is_touch': True, # 是否带有压力传感器
+                'can': 'can1',
             }],
         ),
     ])

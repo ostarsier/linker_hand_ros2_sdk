@@ -8,7 +8,7 @@ from utils.load_write_yaml import LoadWriteYaml
 from utils.open_can import OpenCan
 
 class LinkerHandApi:
-    def __init__(self, hand_type="left", hand_joint="L10", modbus = "None",can="can0"):
+    def __init__(self, hand_type="left", hand_joint="L10", modbus = "None",can="can0"):  # Ubuntu:can0   win:PCAN_USBBUS1
         self.last_position = []
         self.yaml = LoadWriteYaml()
         self.config = self.yaml.load_setting_yaml()
@@ -34,7 +34,8 @@ class LinkerHandApi:
                 # robot = RoboticArm(rm_thread_mode_e.RM_TRIPLE_MODE_E)
                 # arm = robot.rm_create_robot_arm("192.168.1.18", 8080)
                 # print(arm)
-                self.hand = LinkerHandL10For485(ip="192.168.1.18",modbus_port=1,modbus_baudrate=115200,modbus_timeout=5)
+                #self.hand = LinkerHandL10For485(ip="192.168.1.18",modbus_port=1,modbus_baudrate=115200,modbus_timeout=5)
+                self.hand = LinkerHandL10For485()
 
             else : # Default CAN protocol
                 from core.can.linker_hand_l10_can import LinkerHandL10Can
@@ -52,9 +53,9 @@ class LinkerHandApi:
         if sys.platform == "linux":
             self.open_can = OpenCan(load_yaml=self.yaml)
             self.open_can.open_can(self.can)
-            self.is_can = self.open_can.is_can_up_sysfs()
+            self.is_can = self.open_can.is_can_up_sysfs(interface=self.can)
             if not self.is_can:
-                ColorMsg(msg="CAN0 interface is not open", color="red")
+                ColorMsg(msg=f"{self.can} interface is not open", color="red")
                 sys.exit(1)
     
     # Five-finger movement
@@ -109,6 +110,7 @@ class LinkerHandApi:
         '''Set maximum torque'''
         ColorMsg(msg=f"{self.hand_type} {self.hand_joint} set maximum torque to {torque}", color="green")
         return self.hand.set_torque(torque=torque)
+    
     
     def set_current(self, current=[]):
         '''Set current L7/L10/L25 not supported'''

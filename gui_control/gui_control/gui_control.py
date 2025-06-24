@@ -43,7 +43,7 @@ class GuiApp(QWidget):
         self.last_msg = JointState()
         #self.yaml = LoadWriteYaml()
         self.setWindowTitle(f'ROS2 Control Linker Hand {hand_type} {hand_joint}')
-        self.setFixedSize(800, 600)
+        self.setFixedSize(800, 900)
         self.node = None
         self.buttons = []
         self.control_sliders = []
