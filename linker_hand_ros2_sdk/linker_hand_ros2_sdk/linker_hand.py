@@ -370,41 +370,44 @@ class LinkerHand(Node):
         '''控制命令回调'''
         data = json.loads(msg.data)
         print(f"Received setting command: {data['setting_cmd']}",flush=True)
-        if data["params"]["hand_type"] == "left" and self.hand == True:
-            hand = self.api
-            hand_left = True
-        elif data["params"]["hand_type"] == "right" and self.hand == True:
-            hand = self.api
-            hand_right = True
-        else:
-            print("Please specify the hand part to be set",flush=True)
-            return
-        # Set maximum torque
-        if data["setting_cmd"] == "set_max_torque_limits": # Set maximum torque
-            torque = list(data["params"]["torque"])
-            hand.set_torque(torque=torque)
-            
-        if data["setting_cmd"] == "set_speed": # Set speed
-            if isinstance(data["params"]["speed"], list) == True:
-                speed = data["params"]["speed"]
-                hand.set_speed(speed=speed)
+        try:
+            if data["params"]["hand_type"] == "left":
+                hand = self.api
+                hand_left = True
+            elif data["params"]["hand_type"] == "right":
+                hand = self.api
+                hand_right = True
             else:
-                ColorMsg(msg=f"Speed parameter error, speed must be a list", color="red")
-        if data["setting_cmd"] == "clear_faults": # Clear faults
-            if hand_left == True and self.hand_joint == "L10" :
-                ColorMsg(msg=f"L10 left hand cannot clear faults")
-            elif hand_right == True and self.hand_joint == "L10" :
-                ColorMsg(msg=f"L10 right hand cannot clear faults")
-            else:
-                hand.clear_faults()
-        if data["setting_cmd"] == "get_faults": # Get faults
-            f = hand.get_fault()
-            ColorMsg(msg=f"Get faults: {f}")
-        if data["setting_cmd"] == "electric_current": # Get current
-            ColorMsg(msg=f"Get current: {hand.get_current()}")
-        if data["setting_cmd"] == "set_electric_current": # Set current
-            if isinstance(data["params"]["current"], list) == True:
-                hand.set_current(data["params"]["current"])
+                print("Please specify the hand part to be set",flush=True)
+                return
+            # Set maximum torque
+            if data["setting_cmd"] == "set_max_torque_limits": # Set maximum torque
+                torque = list(data["params"]["torque"])
+                hand.set_torque(torque=torque)
+                
+            if data["setting_cmd"] == "set_speed": # Set speed
+                if isinstance(data["params"]["speed"], list) == True:
+                    speed = data["params"]["speed"]
+                    hand.set_speed(speed=speed)
+                else:
+                    ColorMsg(msg=f"Speed parameter error, speed must be a list", color="red")
+            if data["setting_cmd"] == "clear_faults": # Clear faults
+                if hand_left == True and self.hand_joint == "L10" :
+                    ColorMsg(msg=f"L10 left hand cannot clear faults")
+                elif hand_right == True and self.hand_joint == "L10" :
+                    ColorMsg(msg=f"L10 right hand cannot clear faults")
+                else:
+                    hand.clear_faults()
+            if data["setting_cmd"] == "get_faults": # Get faults
+                f = hand.get_fault()
+                ColorMsg(msg=f"Get faults: {f}")
+            if data["setting_cmd"] == "electric_current": # Get current
+                ColorMsg(msg=f"Get current: {hand.get_current()}")
+            if data["setting_cmd"] == "set_electric_current": # Set current
+                if isinstance(data["params"]["current"], list) == True:
+                    hand.set_current(data["params"]["current"])
+        except:
+            print("命令参数错误")
 
     def close_can(self):
         self.open_can.close_can0()
