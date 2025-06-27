@@ -48,7 +48,7 @@ class LinkerHandL7Can:
         if sys.platform == "linux":
             return can.interface.Bus(channel=channel, interface="socketcan", bitrate=baudrate)
         elif sys.platform == "win32":
-            return can.interface.Bus(channel='PCAN_USBBUS1', interface='pcan', bitrate=baudrate)
+            return can.interface.Bus(channel=channel, interface='pcan', bitrate=baudrate)
         else:
             raise EnvironmentError("Unsupported platform for CAN interface")
 
