@@ -12,7 +12,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{
                 'hand_type': 'left',
-                'hand_joint': "L10",
+                'hand_joint': "L7",
                 'is_touch': True,
                 'can': 'can0', # 这里需要修改为实际的CAN总线名称 如果是win系统则 PCAN_USBBUS1
             }],

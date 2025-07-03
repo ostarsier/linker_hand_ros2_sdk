@@ -20,46 +20,61 @@ class LinkerHand(Node):
     def __init__(self, name):
         super().__init__(name)
         # 声明参数（带默认值）
+        # hand_type: 手型（左/右）
+        # hand_joint: 关节类型（如L7/L10等）
+        # is_touch: 是否带触觉功能
+        # can: 使用的CAN通道
         self.declare_parameter('hand_type', 'left')
-        self.declare_parameter('hand_joint', 'L10')
-        self.declare_parameter('is_touch', False)
+        self.declare_parameter('hand_joint', 'L7')
+        self.declare_parameter('is_touch', True)
         self.declare_parameter('can', 'can0')
         
-        # 获取参数值
-        self.hand_type = self.get_parameter('hand_type').value
-        self.hand_joint = self.get_parameter('hand_joint').value
-        self.is_touch = self.get_parameter('is_touch').value
-        self.can = self.get_parameter('can').value
-        self.last_left_hand_move_pose = []
-        self.last_right_hand_move_pose = []
-        self.vel = []
-        self.version = []
-        self.touch_type = -1
-        self.t_force = [-1] * 5
+        # 获取参数值，并保存为成员变量
+        self.hand_type = self.get_parameter('hand_type').value  # 手型（左/右）
+        self.hand_joint = self.get_parameter('hand_joint').value  # 关节类型
+        self.is_touch = self.get_parameter('is_touch').value  # 是否带触觉
+        self.can = self.get_parameter('can').value  # CAN通道
+
+        # 运动相关缓存变量
+        self.last_left_hand_move_pose = []  # 左手上一次运动的位置
+        self.last_right_hand_move_pose = [] # 右手上一次运动的位置
+        self.vel = []  # 当前速度
+        self.version = []  # 手的版本信息
+        self.touch_type = -1  # 触觉类型，-1为无
+        self.t_force = [-1] * 5  # 五指触觉力传感器初值
+
+        # 保存上一次手的信息（如版本、关节类型、速度、电流、故障等）
         self.last_hand_info = {
-            "version": [], # Dexterous hand version number
-            "hand_joint": self.hand_joint, # Dexterous hand joint type
-            "speed": [], # Current speed threshold of the dexterous hand
-            "current": [], # Current of the dexterous hand
-            "fault": [], # Current fault of the dexterous hand
-            "motor_temperature": [], # Current motor temperature of the dexterous hand
-            "torque": [], # Current torque of the dexterous hand
-            "is_touch":self.is_touch,
-            "touch_type": self.touch_type,
-            "finger_order": [] # Finger motor order
+            "version": [], # 灵巧手版本号
+            "hand_joint": self.hand_joint, # 灵巧手关节类型
+            "speed": [], # 当前速度阈值
+            "current": [], # 当前电流
+            "fault": [], # 当前故障
+            "motor_temperature": [], # 当前电机温度
+            "torque": [], # 当前力矩
+            "is_touch":self.is_touch, # 是否带触觉
+            "touch_type": self.touch_type, # 触觉类型
+            "finger_order": [] # 手指电机顺序
         }
+        # 保存上一次手的状态（如状态和速度）
         self.last_hand_state = {
-            "state": [],
-            "vel": []
+            "state": [], # 当前状态
+            "vel": []    # 当前速度
         }
-        self.last_hand_matrix_touch = String()
-        self.last_hand_touch = String()
+        # 触觉信息缓存
+        self.last_hand_matrix_touch = String()  # 矩阵触觉消息
+        self.last_hand_touch = String()         # 单点触觉消息
+        # CAN通信对象
         self.open_can = OpenCan()
-        self.hand_setting_sub = self.create_subscription(String,'/cb_hand_setting_cmd', self.hand_setting_cb, 10)
-        self.last_process_time = 0
-        self.max_hz = 30
-        self.min_interval = 1.0 / self.max_hz
+        # 订阅设置命令的topic
+        self.hand_setting_sub = self.create_subscription(String,'/hand_setting_cmd', self.hand_setting_cb, 10)
+        # 控制频率相关变量
+        self.last_process_time = 0  # 上一次处理的时间戳
+        self.max_hz = 30            # 最大处理频率
+        self.min_interval = 1.0 / self.max_hz # 最小处理间隔
+        # 线程锁，保证多线程安全
         self.lock = threading.Lock()
+        # 初始化手（根据参数自动初始化左手或右手）
         self.init_hand(hand_type=self.hand_type)
 
         
@@ -71,31 +86,31 @@ class LinkerHand(Node):
             self.open_can.open_can(self.can)
             time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
-            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd', self.left_hand_control_cb,10)
-            self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd_arc', self.left_hand_control_arc_cb,10)
-            self.hand_state_pub = self.create_publisher(JointState, '/cb_left_hand_state',10)
-            self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_left_hand_state_arc',10)
-            self.hand_info_pub = self.create_publisher(String, '/cb_left_hand_info', 10)
+            self.hand_cmd_sub = self.create_subscription(JointState, '/left_hand_control_cmd', self.left_hand_control_cb,10)
+            self.hand_cmd_arc_sub = self.create_subscription(JointState, '/left_hand_control_cmd_arc', self.left_hand_control_arc_cb,10)
+            self.hand_state_pub = self.create_publisher(JointState, '/left_hand_state',10)
+            self.hand_state_arc_pub = self.create_publisher(JointState, '/left_hand_state_arc',10)
+            self.hand_info_pub = self.create_publisher(String, '/left_hand_info', 10)
             if self.is_touch == True:
                 if self.touch_type == 2:
-                    self.matrix_touch_pub = self.create_publisher(String, '/cb_left_hand_matrix_touch', 10)
+                    self.matrix_touch_pub = self.create_publisher(String, '/left_hand_matrix_touch', 10)
                 elif self.touch_type != -1:
-                    self.touch_pub = self.create_publisher(Float32MultiArray, '/cb_left_hand_force', 10)
+                    self.touch_pub = self.create_publisher(Float32MultiArray, '/left_hand_force', 10)
         elif hand_type == "right":
             self.api = LinkerHandApi(hand_type=hand_type, hand_joint=self.hand_joint,can=self.can)
             self.open_can.open_can(self.can)
             time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
-            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,100)
-            self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
-            self.hand_state_pub = self.create_publisher(JointState, '/cb_right_hand_state',10)
-            self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_right_hand_state_arc',10)
-            self.hand_info_pub = self.create_publisher(String, '/cb_right_hand_info', 10)
+            self.hand_cmd_sub = self.create_subscription(JointState, '/right_hand_control_cmd', self.right_hand_control_cb,100)
+            self.hand_cmd_arc_sub = self.create_subscription(JointState, '/right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
+            self.hand_state_pub = self.create_publisher(JointState, '/right_hand_state',10)
+            self.hand_state_arc_pub = self.create_publisher(JointState, '/right_hand_state_arc',10)
+            self.hand_info_pub = self.create_publisher(String, '/right_hand_info', 10)
             if self.is_touch == True:
                 if self.touch_type == 2:
-                    self.matrix_touch_pub = self.create_publisher(String, '/cb_right_hand_matrix_touch', 10)
+                    self.matrix_touch_pub = self.create_publisher(String, '/right_hand_matrix_touch', 10)
                 elif self.touch_type != -1:
-                    self.touch_pub = self.create_publisher(Float32MultiArray, '/cb_right_hand_force', 10)
+                    self.touch_pub = self.create_publisher(Float32MultiArray, '/right_hand_force', 10)
         self.version = self.api.get_version()
         pose = None
         torque = [200, 200, 200, 200, 200]
@@ -257,7 +272,9 @@ class LinkerHand(Node):
         self.last_process_time = now
         '''左手接收控制topic回调 for range'''
         pose = list(msg.position)
+        print('left_hand_control_cb begin')
         self.api.finger_move(pose=list(msg.position))
+        print('left_hand_control_cb end')
         vel = list(msg.velocity)
         self.vel = vel
         if all(x == 0 for x in vel):

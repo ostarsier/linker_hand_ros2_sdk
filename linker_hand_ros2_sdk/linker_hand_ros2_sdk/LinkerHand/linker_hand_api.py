@@ -8,55 +8,69 @@ from utils.load_write_yaml import LoadWriteYaml
 from utils.open_can import OpenCan
 
 class LinkerHandApi:
-    def __init__(self, hand_type="left", hand_joint="L10", modbus = "None",can="can0"):  # Ubuntu:can0   win:PCAN_USBBUS1
+    def __init__(self, hand_type="left", hand_joint="L7", modbus = "None",can="can0"):  # Ubuntu:can0   win:PCAN_USBBUS1
+        # 初始化最后一次位置为空列表
         self.last_position = []
+        # 加载YAML配置工具
         self.yaml = LoadWriteYaml()
+        # 读取配置文件内容
         self.config = self.yaml.load_setting_yaml()
+        # 获取SDK版本号
         self.version = self.config["VERSION"]
+        # 保存CAN通道参数
         self.can = can
+        # 打印当前SDK版本信息（绿色字体）
         ColorMsg(msg=f"Current SDK version: {self.version}", color="green")
+        # 保存手型参数（关节类型）
         self.hand_joint = hand_joint
+        # 保存手的左右类型
         self.hand_type = hand_type
+
+        # 根据手的类型分配CAN ID
         if self.hand_type == "left":
-            self.hand_id = 0x28  # Left hand
+            self.hand_id = 0x28  # 左手ID
         if self.hand_type == "right":
-            self.hand_id = 0x27  # Right hand
+            self.hand_id = 0x27  # 右手ID
+
+        # 根据手的关节类型实例化对应的控制类
         if self.hand_joint == "L7":
+            # L7手型CAN协议控制类
             from core.can.linker_hand_l7_can import LinkerHandL7Can
             self.hand = LinkerHandL7Can(can_id=self.hand_id,can_channel=self.can, yaml=self.yaml)
         if self.hand_joint == "L10":
-            #if self.config['LINKER_HAND']['LEFT_HAND']['MODBUS'] == "RML": 
-            if modbus == "RML": # RML API2 485 protocol
-                #ColorMsg(msg="We are working hard to develop it ...", color="yellow")
-                #sys.exit(1)
+            # L10手型，分为RML 485协议和默认CAN协议
+            # if self.config['LINKER_HAND']['LEFT_HAND']['MODBUS'] == "RML": 
+            if modbus == "RML": # RML API2 485协议
                 # from Robotic_Arm.rm_robot_interface import RoboticArm, rm_thread_mode_e
                 from core.rml485.linker_hand_l10_485 import LinkerHandL10For485
-                # robot = RoboticArm(rm_thread_mode_e.RM_TRIPLE_MODE_E)
-                # arm = robot.rm_create_robot_arm("192.168.1.18", 8080)
-                # print(arm)
-                #self.hand = LinkerHandL10For485(ip="192.168.1.18",modbus_port=1,modbus_baudrate=115200,modbus_timeout=5)
+                # 这里可扩展为通过485协议实例化L10手型
                 self.hand = LinkerHandL10For485()
-
-            else : # Default CAN protocol
+            else : # 默认CAN协议
                 from core.can.linker_hand_l10_can import LinkerHandL10Can
                 self.hand = LinkerHandL10Can(can_id=self.hand_id,can_channel=self.can, yaml=self.yaml)
         if self.hand_joint == "L20":
+            # L20手型CAN协议控制类
             from core.can.linker_hand_l20_can import LinkerHandL20Can
             self.hand = LinkerHandL20Can(can_id=self.hand_id,can_channel=self.can, yaml=self.yaml)
         if self.hand_joint == "L21":
+            # L21手型CAN协议控制类
             from core.can.linker_hand_l21_can import LinkerHandL21Can
             self.hand = LinkerHandL21Can(can_id=self.hand_id,can_channel=self.can, yaml=self.yaml)
         if self.hand_joint == "L25":
+            # L25手型CAN协议控制类
             from core.can.linker_hand_l25_can import LinkerHandL25Can
             self.hand = LinkerHandL25Can(can_id=self.hand_id,can_channel=self.can, yaml=self.yaml)
-        # Open can0
+
+        # Linux平台下自动打开CAN通道
         if sys.platform == "linux":
             self.open_can = OpenCan(load_yaml=self.yaml)
             self.open_can.open_can(self.can)
             self.is_can = self.open_can.is_can_up_sysfs(interface=self.can)
+            # 检查CAN通道是否打开成功，失败则报错并退出
             if not self.is_can:
                 ColorMsg(msg=f"{self.can} interface is not open", color="red")
                 sys.exit(1)
+        # 获取嵌入式固件版本信息
         version = self.get_version()
         ColorMsg(msg=f"Embedded:{version}", color="green")
     
