@@ -243,4 +243,5 @@ class LinkerHandApi:
         self.open_can.close_can0()                         
 
 if __name__ == "__main__":
-    hand = LinkerHandApi(hand_type="right", hand_joint="L10")
+    hand = LinkerHandApi(hand_type="left", hand_joint="L7")
+    hand.finger_move([255]*7)

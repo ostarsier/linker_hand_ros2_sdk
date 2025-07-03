@@ -13,8 +13,8 @@ import yaml, os, sys
 class LoadWriteYaml():
     def __init__(self):
         # 由于是API形式，这里要给配置文件目录绝对路径
-        #yaml_path = "/home/linkerhand/ROS2/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
-        yaml_path = os.path.dirname(os.path.abspath(__file__)) + "/../../LinkerHand"
+        yaml_path = "/home/yons/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
+        # yaml_path = os.path.dirname(os.path.abspath(__file__)) + "/../../LinkerHand"
         self.setting_path = yaml_path+"/config/setting.yaml"
         self.l7_positions = yaml_path+"/config/L7_positions.yaml"
         self.l10_positions = yaml_path+"/config/L10_positions.yaml"
