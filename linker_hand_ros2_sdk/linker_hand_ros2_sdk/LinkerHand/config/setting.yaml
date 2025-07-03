@@ -1,10 +1,10 @@
 VERSION: 2.1.7 # 支持新传感器
 LINKER_HAND:  # 手部配置信息
   LEFT_HAND:
-    EXISTS: False # 是否存在左手
+    EXISTS: True # 是否存在左手
     TOUCH: True # 是否有压力传感器
     MODBUS: "None" # 通讯协议是否为485 默认None 当前支持RML(睿尔曼API2)
-    JOINT: L10 # 左手关节数 L7/L10/L20/L21/L25
+    JOINT: L7 # 左手关节数 L7/L10/L20/L21/L25
     NAME: # 无论l10还是l20 joint name都是20个
       - joint41
       - joint42
@@ -31,7 +31,7 @@ LINKER_HAND:  # 手部配置信息
     EXISTS: True # 是否存在右手
     TOUCH: True # 是否有压力传感器
     MODBUS: "None" # 通讯协议是否为485 默认None 当前支持RML(睿尔曼API2)
-    JOINT: L10 # 右手关节数量
+    JOINT: L7 # 右手关节数量
     NAME:  # 无论l10还是l20 joint name都是20个
       - joint71
       - joint72
@@ -53,4 +53,4 @@ LINKER_HAND:  # 手部配置信息
       - joint88
       - joint89
       - joint90
-PASSWORD: "12345678" # 由于与can通讯，需要激活通讯接口用到系统管理员密码。只有Linux系统需要，windows系统不需要
+PASSWORD: "!qaz@wsx" # 由于与can通讯，需要激活通讯接口用到系统管理员密码。只有Linux系统需要，windows系统不需要

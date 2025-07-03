@@ -94,9 +94,126 @@ ros2 topic echo /left_hand_force
 ```
 
 ### 4. 参数设置与故障处理
-```bash
 # 设置最大力矩
 ros2 topic pub /hand_setting_cmd std_msgs/String '{"setting_cmd": "set_max_torque_limits", "params": {"hand_type": "left", "torque": [200, 200, 200, 200, 200]}}'
+
+---
+<br>
+
+# LinkerHand HTTP Server (`linker_hand_http_server.py`)
+
+`linker_hand_http_server.py` 是一个 ROS2 节点，它提供了一个 HTTP 接口来控制灵巧手。这使得通过简单的 HTTP 请求来控制机械手成为可能，便于与 Web 应用程序、脚本或其他非 ROS 系统集成。
+
+## 主要功能
+
+- 在 8000 端口启动一个 HTTP 服务器。
+- 提供 API 端点以触发预定义动作和自定义姿态。
+- 从 YAML 配置文件加载预定义动作。
+- 与主要的灵巧手 ROS2 主题集成。
+
+## 如何运行
+
+1.  **编译工作空间:**
+    ```bash
+    colcon build --symlink-install
+    ```
+
+2.  **配置环境:**
+    ```bash
+    source install/setup.bash
+    ```
+
+3.  **运行节点:**
+    ```bash
+    ros2 run linker_hand_ros2_sdk linker_hand_http_server
+    ```
+    *(注意: 可执行文件名称可能因 `setup.py` 的配置而异。)*
+
+## HTTP API 端点
+
+服务器监听在 `http://<your-robot-ip>:8000`。
+
+### `GET /`
+
+-   **描述:** 显示一个简单的 HTML 页面，其中包含有关如何使用 API 的说明。
+
+### `GET /left_hand/<action_name>`
+
+-   **描述:** 为左手执行一个预定义的动作。`action_name` 必须与 `L7_positions.yaml` 文件中的条目相对应。
+-   **示例:**
+    ```bash
+    curl http://localhost:8000/left_hand/close
+    ```
+-   **成功响应 (200 OK):**
+    ```json
+    {
+      "status": "success",
+      "action": "open",
+      "pose": [ ... ]
+    }
+    ```
+-   **错误响应 (404 Not Found):** 如果动作名称不存在。
+
+### `POST /control`
+
+-   **描述:** 为手部关节设置自定义的位置和速度。
+-   **请求体 (JSON):**
+    ```json
+    {
+      "pose": [p1, p2, p3, p4, p5, p6, p7],
+      "velocity": [v1, v2, v3, v4, v5, v6, v7]
+    }
+    ```
+    -   `pose`: 一个包含7个浮点数的列表，用于目标关节位置。(必需)
+    -   `velocity`: 一个包含7个浮点数的列表，用于关节速度。(可选)
+-   **示例:**
+    ```bash
+    curl -X POST -H "Content-Type: application/json" -d '{"pose": [0, 0, 0, 0, 0, 0, 0]}' http://localhost:8000/control
+    ```
+-   **成功响应 (200 OK):**
+    ```json
+    {
+      "status": "success"
+    }
+    ```
+
+### `POST /finger_dance`
+
+-   **描述:** 触发一个预定义的“手指舞”序列。
+-   **示例:**
+    ```bash
+    curl -X POST http://localhost:8000/finger_dance
+    ```
+-   **成功响应 (200 OK):**
+    ```json
+    {
+      "status": "Finger dance started"
+    }
+
+## 配置文件
+
+预定义的动作从 `linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand/config/L7_positions.yaml` 加载。您可以在此文件中添加或修改动作。
+
+每个动作都有一个 `ACTION_NAME` 和一个 `POSITION` 数组。
+
+`L7_positions.yaml` 示例:
+```yaml
+LEFT_HAND:
+  - ACTION_NAME: "close"
+    POSITION: [255, 255, 255, 255, 255, 255, 0]
+  - ACTION_NAME: "open"
+    POSITION: [0, 0, 0, 0, 0, 0, 0]
+```
+
+## ROS2 接口
+
+### 发布者
+
+-   `/left_hand_control_cmd` (`sensor_msgs/msg/JointState`): 发布关节指令以控制手部。
+
+### 订阅者
+
+-   `/shake_hand` (`std_msgs/msg/Empty`): 监听执行握手姿势的命令。
 
 # 设置速度
 ros2 topic pub /hand_setting_cmd std_msgs/String '{"setting_cmd": "set_speed", "params": {"hand_type": "left", "speed": [1, 1, 1, 1, 1]}}'

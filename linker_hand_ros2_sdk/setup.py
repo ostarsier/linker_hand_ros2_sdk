@@ -39,6 +39,7 @@ setup(
     entry_points={
         'console_scripts': [
             'linker_hand_sdk = linker_hand_ros2_sdk.linker_hand:main',
+            'linker_hand_http_server = linker_hand_ros2_sdk.linker_hand_http_server:main',
         ],
     },
 )

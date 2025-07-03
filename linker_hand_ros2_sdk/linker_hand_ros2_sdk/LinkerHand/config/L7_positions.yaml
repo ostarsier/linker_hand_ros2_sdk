@@ -1,5 +1,5 @@
 LEFT_HAND:
-- ACTION_NAME: 握拳
+- ACTION_NAME: close
   POSITION:
   - 67
   - 151
@@ -8,7 +8,7 @@ LEFT_HAND:
   - 0
   - 0
   - 37
-- ACTION_NAME: 张开
+- ACTION_NAME: open
   POSITION:
   - 255
   - 179
@@ -18,7 +18,7 @@ LEFT_HAND:
   - 255
   - 83
 RIGHT_HAND:
-- ACTION_NAME: 张开
+- ACTION_NAME: open
   POSITION:
   - 255.0
   - 70.0
