@@ -215,6 +215,8 @@ LEFT_HAND:
 
 -   `/shake_hand` (`std_msgs/msg/Empty`): 监听执行握手姿势的命令。
 
+ros2 topic pub --once /shake_hand_mode std_msgs/msg/Float32 '{data: 1.0}'
+
 # 设置速度
 ros2 topic pub /hand_setting_cmd std_msgs/String '{"setting_cmd": "set_speed", "params": {"hand_type": "left", "speed": [1, 1, 1, 1, 1]}}'
 

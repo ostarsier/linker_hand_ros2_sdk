@@ -4,7 +4,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Empty
+from std_msgs.msg import Float32
 
 import threading
 import time
@@ -13,15 +13,21 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import yaml
 import os
 from urllib.parse import unquote
+import random
 
 class SimpleHttpServer(Node):
     def __init__(self):
         super().__init__('linker_hand_http_server')
         self.publisher_ = self.create_publisher(JointState, '/left_hand_control_cmd', 10)
         self.subscription = self.create_subscription(
-            Empty,
-            '/shake_hand',
+            Float32,
+            '/shake_hand_mode',
             self.shake_hand_callback,
+            10)
+        self.subscription = self.create_subscription(
+            Float32,
+            '/grasp_mode',
+            self.grasp_hand_callback,
             10)
         self.get_logger().info('LinkerHand HTTP Server has been started.')
         self.positions = {}
@@ -62,9 +68,17 @@ class SimpleHttpServer(Node):
     def shake_hand_callback(self, msg):
         self.get_logger().info('Received shake hand command')
         # 握手姿态：所有手指半握
-        pose = [128, 128, 128, 128, 128, 128, 0] # 这是一个示例姿态，您可能需要根据实际情况调整
-        self.publish_pose(pose)
+        pose = [200, 100, 200, 200, 200, 200, 200]  # 这是一个示例姿态，您可能需要根据实际情况调整
+        velocity = [60, 60, 60, 60, 60, 60, 60]
+        self.publish_pose(pose, velocity)
         self.get_logger().info('Executing handshake pose.')
+
+    def grasp_hand_callback(self, msg):
+        from grasp import grasp
+        self.get_logger().info('Received grasp hand command, starting in a new thread.')
+        grasp_thread = threading.Thread(target=grasp)
+        grasp_thread.daemon = True
+        grasp_thread.start()
 
     def publish_pose(self, pose, velocity=[]):
         msg = JointState()
@@ -101,28 +115,99 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404, 'Not Found')
 
     def finger_dance_sequence(self):
-        self.ros_node.get_logger().info('Starting finger dance...')
-        # 改编自finger_dance.py的动作序列
-        dance_moves = [
-            ([0, 0, 255, 0, 0, 0, 0], 0.15),
-            ([0, 0, 0, 0, 0, 255, 0], 0.15),
-        ] * 4
-        dance_moves.append(([0] * 7, 0.2))
+        self.ros_node.get_logger().info('Starting a very complex finger dance...')
+        
+        # Helper to create poses, assuming [thumb_rot, thumb_flex, index, middle, ring, pinky, wrist]
+        def create_pose(thumb_rot=0, thumb_flex=0, index=0, middle=0, ring=0, pinky=0, wrist=0):
+            return [float(thumb_rot), float(thumb_flex), float(index), float(middle), float(ring), float(pinky), float(wrist)]
 
-        for i in range(2, 7):
-            pose = [0] * 7
+        dance_moves = []
+        base_speed = 0.08
+        
+        # --- Part 1: The Awakening ---
+        self.ros_node.get_logger().info('Dance Part 1: The Awakening')
+        dance_moves.append((create_pose(), 0.5)) # Start from open
+        for i in range(2, 6): # Index to Pinky
+            pose = create_pose()
+            pose[i] = 128
+            dance_moves.append((pose, base_speed))
+        for i in range(2, 6):
+            pose = create_pose()
             pose[i] = 255
-            dance_moves.append((pose, 0.08))
-        for i in range(5, 1, -1):
-            pose = [0] * 7
-            pose[i] = 255
-            dance_moves.append((pose, 0.08))
-        dance_moves.append(([0] * 7, 0.2))
+            dance_moves.append((pose, base_speed))
+        dance_moves.append((create_pose(index=255, middle=255, ring=255, pinky=255), 0.3)) # Hold
+        
+        # --- Part 2: The Wave ---
+        self.ros_node.get_logger().info('Dance Part 2: The Wave')
+        for _ in range(3):
+            for i in range(2, 6):
+                pose = create_pose(index=255, middle=255, ring=255, pinky=255)
+                pose[i] = 0 # One finger up
+                dance_moves.append((pose, base_speed * 0.8))
+            for i in range(5, 1, -1):
+                pose = create_pose(index=255, middle=255, ring=255, pinky=255)
+                pose[i] = 0 # Wave back
+                dance_moves.append((pose, base_speed * 0.8))
+        
+        # --- Part 3: Thumb and Fingers Duet ---
+        self.ros_node.get_logger().info('Dance Part 3: Thumb and Fingers Duet')
+        dance_moves.append((create_pose(), 0.2)) # All open
+        for _ in range(4):
+            dance_moves.append((create_pose(thumb_flex=255), base_speed * 1.5))
+            dance_moves.append((create_pose(index=255, middle=255, ring=255, pinky=255), base_speed * 1.5))
+        
+        # --- Part 4: Piano Sonata ---
+        self.ros_node.get_logger().info('Dance Part 4: Piano Sonata')
+        for _ in range(20):
+            finger_to_move = random.randint(2, 5)
+            pose = create_pose()
+            pose[finger_to_move] = 255
+            dance_moves.append((pose, base_speed * 0.5))
+            dance_moves.append((create_pose(), base_speed * 0.5))
+
+        # --- Part 5: The Mexican Wave (Gradual) ---
+        self.ros_node.get_logger().info('Dance Part 5: The Mexican Wave')
+        for _ in range(2):
+            current_pose = create_pose()
+            for i in range(2, 6):
+                current_pose[i] = 255
+                dance_moves.append((list(current_pose), base_speed))
+            for i in range(2, 6):
+                current_pose[i] = 0
+                dance_moves.append((list(current_pose), base_speed))
+
+        # --- Part 6: Fist Pump & Finale ---
+        self.ros_node.get_logger().info('Dance Part 6: Fist Pump & Finale')
+        dance_moves.append((create_pose(thumb_flex=255, index=255, middle=255, ring=255, pinky=255), 0.4)) # Fist
+        dance_moves.append((create_pose(), 0.1)) # Open fast
+        dance_moves.append((create_pose(thumb_flex=255, index=255, middle=255, ring=255, pinky=255), 0.1)) # Fist
+        dance_moves.append((create_pose(), 0.4)) # Open slow
+        
+        # Grand Finale: A quick sequence
+        self.ros_node.get_logger().info('Dance Part 7: Grand Finale')
+        final_sequence = [
+            (create_pose(index=255), 0.05),
+            (create_pose(middle=255), 0.05),
+            (create_pose(ring=255), 0.05),
+            (create_pose(pinky=255), 0.05),
+            (create_pose(thumb_flex=255), 0.05),
+            (create_pose(thumb_flex=255, pinky=255), 0.1),
+            (create_pose(index=255, ring=255), 0.1),
+            (create_pose(middle=255, thumb_flex=255), 0.1),
+        ]
+        dance_moves.extend(final_sequence * 2)
+        
+        # End with a reset
+        dance_moves.append((create_pose(), 1.0))
 
         for pose, delay in dance_moves:
+            if not rclpy.ok():
+                self.ros_node.get_logger().info('RCLPY shutdown detected, stopping dance.')
+                break
             self.ros_node.publish_pose(pose)
             time.sleep(delay)
-        self.ros_node.get_logger().info('Finger dance finished.')
+            
+        self.ros_node.get_logger().info('Super complex finger dance finished.')
 
     def do_GET(self):
         path_parts = self.path.split('/')
@@ -169,7 +254,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             <h3>设置自定义姿态</h3>
             <p><b>POST /control</b> 使用 JSON `{\"pose\": [p1, ..., p7], \"velocity\": [v1, ... , v7]}`</p>
             <pre><code>curl -X POST -H "Content-Type: application/json" -d '{\"pose\": [0, 0, 0, 0, 0, 0, 0]}' http://localhost:8000/control</code></pre>
-            
+            cd/home/yons/linker_hand_ros2_sdk
             <h3>开始手指舞</h3>
             <p><b>GET /finger_dance</b></p>
             <pre><code>curl http://localhost:8000/finger_dance</code></pre>
