@@ -21,12 +21,12 @@ class SimpleHttpServer(Node):
         self.publisher_ = self.create_publisher(JointState, '/left_hand_control_cmd', 10)
         self.subscription = self.create_subscription(
             Float32,
-            '/shake_hand_mode_go',
+            '/shake_hand_mode',
             self.shake_hand_callback,
             10)
         self.subscription = self.create_subscription(
             Float32,
-            '/grasp_mode_go',
+            '/grasp_mode',
             self.grasp_hand_callback,
             10)
         self.get_logger().info('LinkerHand HTTP Server has been started.')
