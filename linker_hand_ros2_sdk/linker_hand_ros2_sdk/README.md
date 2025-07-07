@@ -137,12 +137,12 @@ ros2 topic pub /hand_setting_cmd std_msgs/String '{"setting_cmd": "set_max_torqu
 
 -   **描述:** 显示一个简单的 HTML 页面，其中包含有关如何使用 API 的说明。
 
-### `GET /left_hand/<action_name>`
+### `GET /predef/left_hand/<action_name>`
 
 -   **描述:** 为左手执行一个预定义的动作。`action_name` 必须与 `L7_positions.yaml` 文件中的条目相对应。
 -   **示例:**
     ```bash
-    curl http://localhost:8000/left_hand/close
+    curl http://localhost:8000/predef/left_hand/close
     ```
 -   **成功响应 (200 OK):**
     ```json
@@ -177,12 +177,12 @@ ros2 topic pub /hand_setting_cmd std_msgs/String '{"setting_cmd": "set_max_torqu
     }
     ```
 
-### `POST /finger_dance`
+### `GET /finger_dance`
 
 -   **描述:** 触发一个预定义的“手指舞”序列。
 -   **示例:**
     ```bash
-    curl -X POST http://localhost:8000/finger_dance
+    curl -X GET http://localhost:8000/finger_dance
     ```
 -   **成功响应 (200 OK):**
     ```json

@@ -30,12 +30,15 @@ curl http://localhost:5000/hand/handshake
 修改配置文件路径
 load_write_yaml.py
 
-# 1. 启动灵巧手ros2
-
+# 创建虚拟环境
+python3.10 -m venv linker_hand_env
+source linker_hand_env/bin/activate
 pip install -r requirements.txt
+
+# 1. 启动灵巧手ros2
 - 安装的依赖包没有被ros2的python环境识别，需要手动添加
-export PYTHONPATH="/media/yons/843b68f6-dfaf-466a-871e-769728918988/miniconda3/envs/ros2/lib/python3.10/site-packages:$PYTHONPATH"
-export PYTHONPATH=$PYTHONPATH:/home/yons/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk
+export PYTHONPATH="$PYTHONPATH:/home/yons/linker_hand_env/lib/python3.10/site-packages/"
+export PYTHONPATH="$PYTHONPATH:/home/yons/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk"
 
 cd /home/yons/linker_hand_ros2_sdk
 source /opt/ros/humble/setup.bash
