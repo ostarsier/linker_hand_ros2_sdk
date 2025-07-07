@@ -4,11 +4,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 target_dir = os.path.abspath(os.path.join(current_dir, "../../.."))
 sys.path.append(target_dir)
 from LinkerHand.linker_hand_api import LinkerHandApi
-from LinkerHand.utils.load_write_yaml import LoadWriteYaml
 from LinkerHand.utils.init_linker_hand import InitLinkerHand
 from LinkerHand.utils.color_msg import ColorMsg
 import numpy as np
-
 #按大拇指，握紧
 #按小指后松开，放开
 

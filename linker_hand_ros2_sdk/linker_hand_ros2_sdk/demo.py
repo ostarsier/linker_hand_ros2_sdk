@@ -33,7 +33,7 @@ def main():
     ColorMsg(msg=f"设置速度为: {speed}", color="green")
     # pose = [0, 120, 110, 110, 110, 110, 120]   
     # pose = [0, 0, 0, 0, 0, 0, 0] 
-    pose = [255, 255, 255, 255, 255, 255, 255] 
+    pose = [180, 100, 200, 200, 200, 200, 100]
     hand.finger_move(pose=pose)
     time.sleep(1)
     

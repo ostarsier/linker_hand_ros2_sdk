@@ -37,6 +37,7 @@ pip install -r requirements.txt
 
 # 1. 启动灵巧手ros2
 - 安装的依赖包没有被ros2的python环境识别，需要手动添加
+export PYTHONPATH="$PYTHONPATH:/home/yons/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk/LinkerHand"
 export PYTHONPATH="$PYTHONPATH:/home/yons/linker_hand_env/lib/python3.10/site-packages/"
 export PYTHONPATH="$PYTHONPATH:/home/yons/linker_hand_ros2_sdk/src/linker_hand_ros2_sdk/linker_hand_ros2_sdk"
 

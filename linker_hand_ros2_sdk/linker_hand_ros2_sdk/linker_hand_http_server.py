@@ -72,13 +72,13 @@ class SimpleHttpServer(Node):
     def shake_hand_callback(self, msg):
         self.get_logger().info('Received shake hand command')
         # 握手姿态：所有手指半握
-        pose = [200, 100, 200, 200, 200, 200, 200]  # 这是一个示例姿态，您可能需要根据实际情况调整
+        pose = [180, 100, 200, 200, 200, 200, 100]
         velocity = [60, 60, 60, 60, 60, 60, 60]
         self.publish_pose(pose, velocity)
         self.get_logger().info('Executing handshake pose.')
 
     def grasp_hand_callback(self, msg):
-        from grasp import grasp
+        from .grasp import grasp
         self.get_logger().info('Received grasp hand command, starting in a new thread.')
         grasp_thread = threading.Thread(target=grasp)
         grasp_thread.daemon = True
