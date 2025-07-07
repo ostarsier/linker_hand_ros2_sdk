@@ -24,7 +24,7 @@ class LinkerHand(Node):
         # hand_joint: 关节类型（如L7/L10等）
         # is_touch: 是否带触觉功能
         # can: 使用的CAN通道
-        self.declare_parameter('hand_type', 'left')
+        self.declare_parameter('hand_type', 'right')
         self.declare_parameter('hand_joint', 'L7')
         self.declare_parameter('is_touch', True)
         self.declare_parameter('can', 'can0')
@@ -118,8 +118,8 @@ class LinkerHand(Node):
         if self.hand_joint == "L7":
             # The data length of L7 is 7, reinitialize here
             pose = [255, 200, 255, 255, 255, 255, 180]
-            torque = [250, 250, 250, 250, 250, 250, 250]
-            speed = [120, 250, 250, 250, 250, 250, 250]
+            torque = [120, 120, 120, 120, 120, 120, 120]
+            speed = [120, 120, 120, 120, 120, 120, 120]
         elif self.hand_joint == "L10":
             pose = [255, 200, 255, 255, 255, 255, 180, 180, 180, 41]
             speed = [200, 250, 250, 250, 250, 250, 250, 250, 250, 250]

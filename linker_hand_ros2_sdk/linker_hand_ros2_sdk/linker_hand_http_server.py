@@ -18,7 +18,7 @@ import random
 class SimpleHttpServer(Node):
     def __init__(self):
         super().__init__('linker_hand_http_server')
-        self.publisher_ = self.create_publisher(JointState, '/left_hand_control_cmd', 10)
+        self.publisher_ = self.create_publisher(JointState, '/right_hand_control_cmd', 10)
         self.subscription = self.create_subscription(
             Float32,
             '/shake_hand_mode',
