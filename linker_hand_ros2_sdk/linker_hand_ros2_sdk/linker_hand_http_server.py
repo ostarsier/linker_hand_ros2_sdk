@@ -223,6 +223,35 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             
         self.ros_node.get_logger().info('The new SUPER complex finger dance finished.')
 
+    def game_sequence(self):
+        """Executes the rock-paper-scissors game sequence."""
+        self.ros_node.get_logger().info('Starting rock-paper-scissors game.')
+
+        pose_rock =     [0,   0,   0,   0,   0,   0,   0]  # 石头
+        pose_paper =    [255, 255, 255, 255, 255, 255, 0]  # 布 (拇指旋转通常保持0或根据实际调整)
+        pose_scissors = [0,   0,   255, 255, 0,   0,   0]  # 剪刀 (拇指内收，食指中指伸直)
+
+
+        poses = [
+            ('剪刀 (scissors)', pose_scissors),
+            ('石头 (rock)', pose_rock),
+            ('布 (paper)', pose_paper)
+        ]
+
+        # Randomly select a pose
+        choice_name, chosen_pose = random.choice(poses)
+        self.ros_node.get_logger().info(f'Playing: {choice_name}')
+
+        # Execute the chosen pose
+        self.ros_node.publish_pose(chosen_pose)
+        time.sleep(2)
+
+        # Return to default pose
+        default_pose = [120, 120, 200, 200, 200, 200, 0]   
+        self.ros_node.get_logger().info('Returning to default pose.')
+        self.ros_node.publish_pose(default_pose)
+        self.ros_node.get_logger().info('Game finished.')
+
     def do_GET(self):
         path_parts = self.path.split('/')
         # New path format: ['', 'predef', 'left_hand', 'close']
@@ -252,6 +281,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             # 在新线程中执行手指舞以避免阻塞HTTP服务器
             dance_thread = threading.Thread(target=self.finger_dance_sequence)
             dance_thread.start()
+        elif self.path == '/game':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': '剪刀石头布游戏已开始'}).encode('utf-8'))
+            # 在新线程中执行游戏序列以避免阻塞HTTP服务器
+            game_thread = threading.Thread(target=self.game_sequence)
+            game_thread.start()
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
@@ -277,6 +314,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             <h3>开始手指舞</h3>
             <p><b>GET /finger_dance</b></p>
             <pre><code>curl http://localhost:8000/finger_dance</code></pre>
+
+            <h3>玩“剪刀、石头、布”</h3>
+            <p><b>GET /game</b></p>
+            <pre><code>curl http://localhost:8000/game</code></pre>
             
             </body>
             </html>

@@ -36,3 +36,15 @@ RIGHT_HAND:
   - 255
   - 255
   - 83
+- ACTION_NAME: default
+  POSITION:
+  - 0
+  - 120
+  - 200
+  - 200
+  - 200
+  - 200
+  - 120   
+  
+  
+  

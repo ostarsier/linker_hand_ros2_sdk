@@ -2,7 +2,7 @@ import can
 import time, sys
 import threading
 import numpy as np
-from LinkerHand.utils.open_can import OpenCan
+from utils.open_can import OpenCan
 
 
 class LinkerHandL7Can:
@@ -34,11 +34,12 @@ class LinkerHandL7Can:
             128: 8,
             144: 9,
             160: 10,
+
             176: 11,
         }
         # Fault codes
         self.x35 = [0] * 7, [0] * 7
-        self.joint_angles = [0] * 10
+        self.joint_angles = [255] * 10
         self.pressures = [200] * 7  # Default torque 200
         self.bus = self.init_can_bus(can_channel, baudrate)
         self.normal_force, self.tangential_force, self.tangential_force_dir, self.approach_inc = [[0.0] * 7 for _ in range(4)]
