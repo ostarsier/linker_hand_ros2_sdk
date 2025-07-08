@@ -11,7 +11,7 @@ from LinkerHand.utils.color_msg import ColorMsg
 
 def main():
     linkerhand = InitLinkerHand()
-    left_hand, left_hand_joint, left_hand_type, left_hand_force, left_hand_pose, left_hand_torque, left_hand_speed, \
+    left_hand, left_hand_joint, left_hand_type, left_hand_force, le6ft_hand_pose, left_hand_torque, left_hand_speed, \
     right_hand, right_hand_joint, right_hand_type, right_hand_force, right_hand_pose, right_hand_torque, right_hand_speed, setting = linkerhand.current_hand()
 
     hand = None
@@ -31,9 +31,9 @@ def main():
     speed = [60, 60, 60, 60, 60, 60, 60]
     hand.set_speed(speed=speed)
     ColorMsg(msg=f"设置速度为: {speed}", color="green")
-    # pose = [0, 120, 110, 110, 110, 110, 120]   
-    # pose = [0, 0, 0, 0, 0, 0, 0] 
-    pose = [180, 100, 200, 200, 200, 200, 100]
+    # pose = [0, 120, 200, 200, 200, 200, 120]   
+    pose = [0, 0, 0, 0, 0, 0, 0] 
+    # pose = [180, 100, 200, 200, 200, 200, 100]
     hand.finger_move(pose=pose)
     time.sleep(1)
     

@@ -117,7 +117,7 @@ class LinkerHand(Node):
         speed = [200, 250, 250, 250, 250]
         if self.hand_joint == "L7":
             # The data length of L7 is 7, reinitialize here
-            pose = [255, 200, 255, 255, 255, 255, 180]
+            pose = [0, 120, 200, 200, 200, 200, 120]   
             torque = [120, 120, 120, 120, 120, 120, 120]
             speed = [120, 120, 120, 120, 120, 120, 120]
         elif self.hand_joint == "L10":

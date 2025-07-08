@@ -53,3 +53,5 @@ ros2 run linker_hand_ros2_sdk linker_hand_http_server
 # 3.调用http服务
 
 curl -X POST -H "Content-Type: application/json" -d '{"pose": [255, 255, 255, 255, 255, 255, 255]}' http://localhost:8000/control
+
+curl -X POST -H "Content-Type: application/json" -d '{"pose": [255, 255, 255, 255, 255, 255, 255]}' http://localhost:8000/predef/right_hand/close
