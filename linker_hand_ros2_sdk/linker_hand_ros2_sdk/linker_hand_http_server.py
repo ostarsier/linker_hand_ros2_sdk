@@ -125,94 +125,55 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return [float(thumb_rot), float(thumb_flex), float(index), float(middle), float(ring), float(pinky), float(wrist)]
 
         dance_moves = []
-        fast = 0.05
-        medium = 0.1
-        slow = 0.2
-        
-        # --- Introduction: "The Calibrator" ---
-        self.ros_node.get_logger().info('Dance Intro: The Calibrator')
-        dance_moves.append((create_pose(), 0.5)) # Start open
-        # Cycle through each finger
-        for i in range(1, 6): # All fingers including thumb flex
-            pose = create_pose()
-            pose[i] = 255
-            dance_moves.append((pose, slow))
-            dance_moves.append((create_pose(), slow))
-        # Thumb rotation
-        dance_moves.append((create_pose(thumb_rot=255), slow))
+        slow = 1.5
+        medium = 0.8
+        fast = 0.4
+
+        # --- 1. 全手掌大幅度开合 ---
+        self.ros_node.get_logger().info('Dance: 1. 大幅度开合')
+        dance_moves.append((create_pose(thumb_rot=0, thumb_flex=0, index=0, middle=0, ring=0, pinky=0), slow)) # 完全展开
+        dance_moves.append((create_pose(thumb_rot=0, thumb_flex=255, index=255, middle=255, ring=255, pinky=255), slow)) # 紧握成拳
+        dance_moves.append((create_pose(thumb_rot=0, thumb_flex=0, index=0, middle=0, ring=0, pinky=0), slow)) # 再次完全展开
+
+        # --- 2. "钢琴" - 独立手指运动 ---
+        self.ros_node.get_logger().info('Dance: 2. 钢琴演奏')
+        # 保持其他手指伸展，依次弯曲再伸直每个手指
+        for finger_name in ['index', 'middle', 'ring', 'pinky']:
+            pose_args = {'index': 0, 'middle': 0, 'ring': 0, 'pinky': 0}
+            pose_args[finger_name] = 255
+            dance_moves.append((create_pose(**pose_args), fast))
+        dance_moves.append((create_pose(), medium)) # 全部伸直
+
+        # --- 3. 波浪动作 ---
+        self.ros_node.get_logger().info('Dance: 3. 波浪')
+        # 从小指开始的波浪
+        dance_moves.append((create_pose(pinky=255), fast))
+        dance_moves.append((create_pose(pinky=255, ring=255), fast))
+        dance_moves.append((create_pose(pinky=255, ring=255, middle=255), fast))
+        dance_moves.append((create_pose(pinky=255, ring=255, middle=255, index=255), fast))
+        # 波浪回滚
+        dance_moves.append((create_pose(ring=255, middle=255, index=255), fast))
+        dance_moves.append((create_pose(middle=255, index=255), fast))
+        dance_moves.append((create_pose(index=255), fast))
+        dance_moves.append((create_pose(), medium))
+
+        # --- 4. 拇指运动 (避免碰撞) ---
+        self.ros_node.get_logger().info('Dance: 4. 拇指独舞')
+        # 其他四指半握，为拇指提供运动空间
+        dance_moves.append((create_pose(index=128, middle=128, ring=128, pinky=128), medium))
+        # 拇指旋转
+        dance_moves.append((create_pose(thumb_rot=255, index=128, middle=128, ring=128, pinky=128), medium))
+        dance_moves.append((create_pose(thumb_rot=0, index=128, middle=128, ring=128, pinky=128), medium))
+        # 拇指屈伸
+        dance_moves.append((create_pose(thumb_flex=255, index=128, middle=128, ring=128, pinky=128), medium))
+        dance_moves.append((create_pose(thumb_flex=0, index=128, middle=128, ring=128, pinky=128), medium))
+
+        # --- 5. 结尾动作: OK手势 -> 展开 ---
+        self.ros_node.get_logger().info('Dance: 5. OK手势收尾')
+        # OK手势，注意拇指和食指的位置
+        dance_moves.append((create_pose(thumb_rot=90, thumb_flex=180, index=200, middle=0, ring=0, pinky=0), slow))
+        # 最终缓慢展开
         dance_moves.append((create_pose(), slow))
-
-        # --- Part 1: "Ripples on a Pond" ---
-        self.ros_node.get_logger().info('Dance Part 1: Ripples on a Pond')
-        for _ in range(3):
-            # Ripple out
-            for i in range(2, 6): # index to pinky
-                pose = create_pose()
-                pose[i] = 255
-                dance_moves.append((pose, fast))
-            # Ripple in
-            for i in range(5, 1, -1):
-                pose = create_pose()
-                pose[i] = 255
-                dance_moves.append((pose, fast))
-        dance_moves.append((create_pose(), medium)) # Clear
-
-        # --- Part 2: "The Percussionist" ---
-        self.ros_node.get_logger().info('Dance Part 2: The Percussionist')
-        for _ in range(30):
-            finger1 = random.randint(2, 5)
-            finger2 = random.randint(2, 5)
-            pose = create_pose()
-            pose[finger1] = 255
-            if finger1 != finger2:
-                pose[finger2] = 255
-            dance_moves.append((pose, fast))
-            dance_moves.append((create_pose(), fast))
-
-        # --- Part 3: "Thumb Acrobatics" ---
-        self.ros_node.get_logger().info('Dance Part 3: Thumb Acrobatics')
-        dance_moves.append((create_pose(thumb_rot=128, thumb_flex=128), medium)) # Thumb center
-        # Touch each finger with thumb
-        for i in range(2, 6):
-            dance_moves.append((create_pose(thumb_rot=128, thumb_flex=255, **{['index', 'middle', 'ring', 'pinky'][i-2]: 255}), medium))
-        dance_moves.append((create_pose(), medium)) # Reset
-
-        # --- Part 4: "The Swarm" ---
-        self.ros_node.get_logger().info('Dance Part 4: The Swarm')
-        current_pose = [0.0] * 7
-        for _ in range(50):
-            # Each finger moves randomly up or down
-            for i in range(1, 6):
-                current_pose[i] += random.uniform(-80, 80)
-                current_pose[i] = max(0, min(255, current_pose[i])) # Clamp
-            dance_moves.append((list(current_pose), fast))
-        
-        # --- Crescendo: "The Power Grip" ---
-        self.ros_node.get_logger().info('Dance Crescendo: The Power Grip')
-        # Slowly close all fingers
-        for i in range(0, 256, 16):
-            val = float(i)
-            dance_moves.append((create_pose(thumb_flex=val, index=val, middle=val, ring=val, pinky=val), fast))
-        # Hold fist
-        dance_moves.append((create_pose(thumb_flex=255, index=255, middle=255, ring=255, pinky=255), 1.0))
-        # Slowly open
-        for i in range(255, -1, -16):
-            val = float(i)
-            dance_moves.append((create_pose(thumb_flex=val, index=val, middle=val, ring=val, pinky=val), medium))
-
-        # --- Finale: "Starlight" ---
-        self.ros_node.get_logger().info('Dance Finale: Starlight')
-        for _ in range(40):
-            pose = create_pose()
-            for i in range(1, 6):
-                if random.random() > 0.5:
-                    pose[i] = random.uniform(100, 200)
-            dance_moves.append((pose, fast))
-
-        # --- Conclusion: "The Bow" ---
-        self.ros_node.get_logger().info('Dance Conclusion: The Bow')
-        dance_moves.append((create_pose(thumb_flex=255, index=255, middle=255, ring=255, pinky=255), 1.0)) # Close
-        dance_moves.append((create_pose(), 1.5)) # Open slowly
 
         for pose, delay in dance_moves:
             if not rclpy.ok():
