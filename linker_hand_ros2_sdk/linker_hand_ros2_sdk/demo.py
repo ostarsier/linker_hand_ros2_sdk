@@ -31,9 +31,12 @@ def main():
     speed = [60, 60, 60, 60, 60, 60, 60]
     hand.set_speed(speed=speed)
     ColorMsg(msg=f"设置速度为: {speed}", color="green")
-    # pose = [0, 120, 200, 200, 200, 200, 120]   
-    pose = [0, 0, 0, 0, 0, 0, 0] 
+    # pose = [120, 120, 200, 200, 200, 200, 0]   
+    # pose = [0, 0, 0, 0, 0, 0, 0] 
     # pose = [180, 100, 200, 200, 200, 200, 100]
+    # pose = [67, 151, 255, 0, 0, 0, 37]
+
+    pose = [67, 151, 0, 0, 0, 0, 37]
     hand.finger_move(pose=pose)
     time.sleep(1)
     

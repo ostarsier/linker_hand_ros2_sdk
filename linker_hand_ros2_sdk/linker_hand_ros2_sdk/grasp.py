@@ -50,32 +50,16 @@ def grasp():
     microphone_detected = False
     grasp_complete = False
     grasp_step = 10  # 每一步闭合的量 (0-255范围)。值越小，抓握越慢/越平滑。
-    prev_little_matrix_pressed = False # 追踪小指矩阵之前的状态
-    
 
     while True:
-        # 获取当前触摸传感器状态
-        thumb_matrix, index_matrix, middle_matrix, ring_matrix, little_matrix = hand.get_matrix_touch()
-        current_little_matrix_pressed = (little_matrix > 0).any() # 检查小指是否有任何部分被按压
-
-        if prev_little_matrix_pressed and not current_little_matrix_pressed:
-            ColorMsg(msg="小指矩阵松开，恢复初始张开姿态。", color="orange")
-            current_pose = list(initial_open_pose)
-            hand.finger_move(pose=current_pose)
-            microphone_detected = False
-            grasp_complete = False
-            prev_little_matrix_pressed = False # 已松开，重置状态以备下次按压
-            time.sleep(0.1) # 短暂延时以确保姿态已改变
-            continue # 跳过本轮后续逻辑，重新开始循环
-
-        # 更新 prev_little_matrix_pressed 以供下一轮迭代检查
-        prev_little_matrix_pressed = current_little_matrix_pressed
-
         if grasp_complete:
             ColorMsg(msg=f"话筒已抓稳。当前姿态: {current_pose}", color="magenta")
-            time.sleep(1)
+            break # 抓取完成，退出循环
 
-        elif not microphone_detected:
+        # 获取当前触摸传感器状态
+        thumb_matrix, _, _, _, _ = hand.get_matrix_touch()
+
+        if not microphone_detected:
             ColorMsg(msg="等待放置话筒...", color="blue")
             thumb_matrix_pressed = (thumb_matrix > 0).any() # 检查拇指是否有任何部分被按压
             if thumb_matrix_pressed:

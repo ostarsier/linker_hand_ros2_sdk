@@ -21,14 +21,22 @@ class SimpleHttpServer(Node):
         self.publisher_ = self.create_publisher(JointState, '/right_hand_control_cmd', 10)
         self.subscription = self.create_subscription(
             Float32,
-            '/shake_hand_mode',
-            self.shake_hand_callback,
+            '/right_hand1_mode',
+            self.zhitian_callback,
+            10)
+
+        self.subscription = self.create_subscription(
+            Float32,
+            '/right_hand2_mode',
+            self.close_callback,
             10)
         self.subscription = self.create_subscription(
             Float32,
-            '/grasp_mode',
-            self.grasp_hand_callback,
+            '/right_hand3_mode',
+            self.close_callback,
             10)
+        
+
         self.get_logger().info('LinkerHand HTTP Server has been started.')
         self.positions = {}
         self.load_positions()
@@ -69,20 +77,20 @@ class SimpleHttpServer(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to load L7_positions.yaml: {e}")
 
-    def shake_hand_callback(self, msg):
-        self.get_logger().info('Received shake hand command')
-        # 握手姿态：所有手指半握
-        pose = [180, 100, 200, 200, 200, 200, 100]
+    def close_callback(self, msg):
+        self.get_logger().info('Received close command')
+        pose = [67, 151, 0, 0, 0, 0, 37]
         velocity = [60, 60, 60, 60, 60, 60, 60]
         self.publish_pose(pose, velocity)
-        self.get_logger().info('Executing handshake pose.')
+        self.get_logger().info('Executing close pose.')
 
-    def grasp_hand_callback(self, msg):
-        from .grasp import grasp
-        self.get_logger().info('Received grasp hand command, starting in a new thread.')
-        grasp_thread = threading.Thread(target=grasp)
-        grasp_thread.daemon = True
-        grasp_thread.start()
+    def zhitian_callback(self, msg):
+        self.get_logger().info('Received zhitian command')
+        pose = [67, 151, 255, 0, 0, 0, 37]
+        velocity = [60, 60, 60, 60, 60, 60, 60]
+        self.publish_pose(pose, velocity)
+        self.get_logger().info('Executing zhitian pose.')
+
 
     def publish_pose(self, pose, velocity=[]):
         msg = JointState()

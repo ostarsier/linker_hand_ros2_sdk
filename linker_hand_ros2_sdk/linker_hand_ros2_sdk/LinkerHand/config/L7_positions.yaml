@@ -17,6 +17,15 @@ LEFT_HAND:
   - 255
   - 255
   - 83
+- ACTION_NAME: default
+  POSITION:
+  - 0
+  - 120
+  - 200
+  - 200
+  - 200
+  - 200
+  - 120
 RIGHT_HAND:
 - ACTION_NAME: close
   POSITION:
@@ -36,6 +45,15 @@ RIGHT_HAND:
   - 255
   - 255
   - 83
+- ACTION_NAME: zhitian
+  POSITION:
+  - 67
+  - 151
+  - 255
+  - 0
+  - 0
+  - 0
+  - 37  
 - ACTION_NAME: default
   POSITION:
   - 0
